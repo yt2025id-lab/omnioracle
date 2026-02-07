@@ -1,0 +1,23 @@
+name: omnioracle
+version: 1.0.0
+description: OmniOracle CRE workflows — market factory, dynamic oracle resolver, cross-chain sync
+
+chains:
+  base_sepolia:
+    chain_id: 84532
+    rpc_url: https://sepolia.base.org
+
+contracts:
+  market_factory:
+    chain: base_sepolia
+    address: "${MARKET_FACTORY_ADDRESS}"
+  oracle_pipeline:
+    chain: base_sepolia
+    address: "${ORACLE_PIPELINE_ADDRESS}"
+  omni_resolver:
+    chain: base_sepolia
+    address: "${OMNI_RESOLVER_ADDRESS}"
+
+forwarder:
+  chain: base_sepolia
+  address: "0x82300bd7c3958625581cc2F77bC6464dcEcDF3e5"
