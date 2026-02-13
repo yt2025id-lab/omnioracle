@@ -4,7 +4,7 @@
 
 Built for the [Chainlink Convergence Hackathon](https://chain.link/hackathon) (Feb 6 - Mar 1, 2026) — Prediction Markets Track.
 
-**Live Demo:** [omnioracle-frontend-flame.vercel.app](https://omnioracle-frontend-flame.vercel.app)
+**Live Demo:** [omnioracle.vercel.app](https://omnioracle.vercel.app)
 
 ---
 
