@@ -245,7 +245,9 @@ cd cre-workflows && cre workflow deploy market-factory
 - **GitHub:** https://github.com/yt2025id-lab/omnioracle
 - **Frontend:** https://omnioracle-frontend-flame.vercel.app
 - **Demo Video:** [to be recorded]
-- **Deployed Contracts:** [to be deployed on Base Sepolia]
+- **MarketFactory:** [`0xd3A85f742CFE6B802A45bCF17c9C07B5adeC02c2`](https://sepolia.basescan.org/address/0xd3A85f742CFE6B802A45bCF17c9C07B5adeC02c2)
+- **OraclePipeline:** [`0x98BB79754e0475046B25CdCfbBdfd863f0e1D2F8`](https://sepolia.basescan.org/address/0x98BB79754e0475046B25CdCfbBdfd863f0e1D2F8)
+- **OmniResolver:** [`0xc75168B64808d46Fa25f651E7c2026B49Ad0B555`](https://sepolia.basescan.org/address/0xc75168B64808d46Fa25f651E7c2026B49Ad0B555)
 - **CRE Workflow:** [to be deployed/simulated]
 
 ---

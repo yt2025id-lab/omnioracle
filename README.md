@@ -258,7 +258,17 @@ switch (pipelineType) {
 
 ---
 
-## Key Addresses (Base Sepolia)
+## Deployed Contracts (Base Sepolia)
+
+| Contract | Address | Explorer |
+|----------|---------|----------|
+| **MarketFactory** | `0xd3A85f742CFE6B802A45bCF17c9C07B5adeC02c2` | [View](https://sepolia.basescan.org/address/0xd3A85f742CFE6B802A45bCF17c9C07B5adeC02c2) |
+| **OraclePipeline** | `0x98BB79754e0475046B25CdCfbBdfd863f0e1D2F8` | [View](https://sepolia.basescan.org/address/0x98BB79754e0475046B25CdCfbBdfd863f0e1D2F8) |
+| **OmniResolver** | `0xc75168B64808d46Fa25f651E7c2026B49Ad0B555` | [View](https://sepolia.basescan.org/address/0xc75168B64808d46Fa25f651E7c2026B49Ad0B555) |
+| **CrossChainRegistry** | `0xE0A70aaE7FceDfE9479Ac2C298364b830152b693` | [View](https://sepolia.basescan.org/address/0xE0A70aaE7FceDfE9479Ac2C298364b830152b693) |
+| **AutoResolver** | `0x35b872462CeE8fcBAa5dC26fF1eD412f0938FE00` | [View](https://sepolia.basescan.org/address/0x35b872462CeE8fcBAa5dC26fF1eD412f0938FE00) |
+
+### Chainlink Infrastructure
 
 | Contract | Address |
 |----------|---------|
