@@ -4,6 +4,8 @@
 
 Built for the [Chainlink Convergence Hackathon](https://chain.link/hackathon) (Feb 6 - Mar 1, 2026) — Prediction Markets Track.
 
+**Live Demo:** [omnioracle-frontend-flame.vercel.app](https://omnioracle-frontend-flame.vercel.app)
+
 ---
 
 ## Problem
@@ -282,9 +284,27 @@ switch (pipelineType) {
 - **Contracts**: Foundry, Solidity 0.8.24, OpenZeppelin v5
 - **CRE**: @chainlink/cre-sdk (TypeScript -> WASM)
 - **AI**: Google Gemini (search grounding)
-- **x402**: @x402/express + @x402/fetch
-- **Frontend**: Next.js 14, Tailwind CSS, wagmi v3, viem v2, RainbowKit
+- **x402**: @x402/express v2.3 + @x402/evm + @x402/core
+- **Frontend**: Next.js 16, Tailwind CSS 4, wagmi v3, viem v2, RainbowKit
 - **Runtime**: Bun 1.2.21+
+
+## Chainlink-Related Files
+
+> Required by hackathon submission — direct links to all Chainlink integration code.
+
+| File | Chainlink Service | Description |
+|------|------------------|-------------|
+| [`contracts/src/MarketFactory.sol`](contracts/src/MarketFactory.sol) | CRE, VRF | CRE Forwarder callback `onReport()`, VRF featured market |
+| [`contracts/src/OmniResolver.sol`](contracts/src/OmniResolver.sol) | CRE | CRE resolution callback, EVM Log trigger |
+| [`contracts/src/OraclePipeline.sol`](contracts/src/OraclePipeline.sol) | Data Feeds, Data Streams | Pipeline config (feed address, thresholds) |
+| [`contracts/src/CrossChainRegistry.sol`](contracts/src/CrossChainRegistry.sol) | CCIP | Market mirroring via CCIP |
+| [`contracts/src/AutoResolver.sol`](contracts/src/AutoResolver.sol) | Automation | checkUpkeep/performUpkeep for auto-resolution |
+| [`cre-workflows/market-factory/`](cre-workflows/market-factory/) | CRE | HTTP + Cron workflow for market creation |
+| [`cre-workflows/oracle-resolver/`](cre-workflows/oracle-resolver/) | CRE, Data Feeds | EVM Log workflow for dynamic pipeline resolution |
+| [`cre-workflows/oracle-resolver/logCallback.ts`](cre-workflows/oracle-resolver/logCallback.ts) | Data Feeds, Functions | Core: dynamic pipeline routing (263 lines) |
+| [`cre-workflows/cross-chain-sync/`](cre-workflows/cross-chain-sync/) | CRE, CCIP | Cron workflow for cross-chain market sync |
+| [`x402-server/src/server.ts`](x402-server/src/server.ts) | x402 | Payment-gated API with @x402/express middleware |
+| [`cre-workflows/project.yaml`](cre-workflows/project.yaml) | CRE | Workflow configuration & triggers |
 
 ## License
 

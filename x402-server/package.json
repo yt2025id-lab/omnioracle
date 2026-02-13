@@ -6,9 +6,11 @@
     "start": "bun run src/server.ts"
   },
   "dependencies": {
-    "@x402/express": "^0.1.0",
-    "express": "^4.21.0",
+    "@x402/core": "^2.3.1",
+    "@x402/evm": "^2.3.1",
+    "@x402/express": "^2.3.0",
     "cors": "^2.8.5",
+    "express": "^4.21.0",
     "viem": "^2.30.0"
   },
   "devDependencies": {

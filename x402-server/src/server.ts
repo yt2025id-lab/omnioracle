@@ -2,12 +2,51 @@ import express from "express";
 import cors from "cors";
 import { createPublicClient, http, formatEther } from "viem";
 import { baseSepolia } from "viem/chains";
+import { paymentMiddleware, x402ResourceServer } from "@x402/express";
+import { ExactEvmScheme } from "@x402/evm/exact/server";
+import { HTTPFacilitatorClient } from "@x402/core/server";
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 3003;
+const PAY_TO = (process.env.PAY_TO_ADDRESS || "0x0000000000000000000000000000000000000000") as `0x${string}`;
+
+// x402 Payment Setup
+const facilitatorClient = new HTTPFacilitatorClient({ url: "https://facilitator.x402.org" });
+const resourceServer = new x402ResourceServer(facilitatorClient)
+  .register("eip155:84532", new ExactEvmScheme());
+
+app.use(
+  paymentMiddleware(
+    {
+      "POST /api/create-market": {
+        accepts: {
+          scheme: "exact",
+          price: "$0.01",
+          network: "eip155:84532",
+          payTo: PAY_TO,
+        },
+        description: "Create a new prediction market on OmniOracle",
+      },
+      "POST /api/request-resolution": {
+        accepts: {
+          scheme: "exact",
+          price: "$0.005",
+          network: "eip155:84532",
+          payTo: PAY_TO,
+        },
+        description: "Request oracle resolution for a market",
+      },
+    },
+    resourceServer,
+    {
+      appName: "OmniOracle",
+      testnet: true,
+    },
+  ),
+);
 
 const publicClient = createPublicClient({
   chain: baseSepolia,
@@ -88,9 +127,9 @@ const CategoryLabels = ["Crypto", "Sports", "Politics", "Science", "Entertainmen
 const StatusLabels = ["Open", "Resolution Requested", "Resolving", "Resolved", "Disputed", "Expired"];
 const OutcomeLabels = ["YES", "NO", "INVALID"];
 
-// ============ PAYMENT-GATED ENDPOINTS ============
+// ============ PAYMENT-GATED ENDPOINTS (x402) ============
 
-// POST /api/create-market ($0.01 USDC) — triggers market-factory CRE workflow
+// POST /api/create-market — triggers market-factory CRE workflow
 app.post("/api/create-market", async (req, res) => {
   const { question, category, deadline, pipelineType, pipelineConfig } = req.body;
 
@@ -112,7 +151,7 @@ app.post("/api/create-market", async (req, res) => {
   }
 });
 
-// POST /api/request-resolution ($0.005 USDC) — triggers oracle-resolver
+// POST /api/request-resolution — triggers oracle-resolver
 app.post("/api/request-resolution", async (req, res) => {
   const { marketId } = req.body;
 
