@@ -1,0 +1,1560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OmniOracle — Live Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #030712;
+    --card:     #0f172a;
+    --card2:    #111827;
+    --border:   #1f2937;
+    --border2:  #374151;
+    --purple:   #8b5cf6;
+    --purple2:  #7c3aed;
+    --orange:   #f97316;
+    --cyan:     #22d3ee;
+    --green:    #4ade80;
+    --yellow:   #facc15;
+    --pink:     #ec4899;
+    --red:      #f87171;
+    --blue:     #60a5fa;
+    --gray:     #9ca3af;
+    --gray2:    #6b7280;
+    --white:    #f9fafb;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--white);
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+
+  /* ─── NAVBAR ─────────────────────────────────────────────── */
+  .navbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(3,7,18,.9);
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(12px);
+    padding: 0 32px;
+    height: 56px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .logo {
+    font-weight: 800; font-size: 18px;
+    background: linear-gradient(135deg, var(--purple), var(--orange), var(--cyan));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .nav-links { display: flex; gap: 24px; }
+  .nav-links a { color: var(--gray); font-size: 13px; text-decoration: none; }
+  .chain-badge {
+    background: var(--card2); border: 1px solid var(--border);
+    border-radius: 20px; padding: 4px 10px;
+    font-size: 11px; color: var(--cyan); font-weight: 500;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .chain-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--cyan); animation: pulse2 2s infinite; }
+
+  /* ─── PROGRESS BAR ─────────────────────────────────────────── */
+  .progress-wrap {
+    position: fixed; top: 56px; left: 0; right: 0; z-index: 99;
+    background: var(--card); border-bottom: 1px solid var(--border);
+    padding: 8px 32px; display: flex; align-items: center; gap: 12px;
+  }
+  .progress-bar { flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--purple), var(--cyan)); border-radius: 2px; transition: width .8s ease; }
+  .step-label { font-size: 11px; color: var(--gray); white-space: nowrap; }
+  .step-count { font-size: 11px; color: var(--gray2); }
+
+  /* ─── MAIN ─────────────────────────────────────────────────── */
+  .main { padding: 120px 32px 40px; max-width: 1280px; margin: 0 auto; }
+
+  /* ─── SCENES ─────────────────────────────────────────────── */
+  .scene {
+    display: none; opacity: 0;
+    animation: fadeIn .5s ease forwards;
+    min-height: calc(100vh - 160px);
+  }
+  .scene.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ─── CARDS ─────────────────────────────────────────────── */
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 24px;
+  }
+  .card-sm { padding: 16px; }
+  .card-glow { border-color: var(--purple); box-shadow: 0 0 30px rgba(139,92,246,.15); }
+  .card-green { border-color: var(--green); box-shadow: 0 0 30px rgba(74,222,128,.15); }
+  .card-cyan { border-color: var(--cyan); box-shadow: 0 0 30px rgba(34,211,238,.15); }
+  .card-orange { border-color: var(--orange); box-shadow: 0 0 30px rgba(249,115,22,.15); }
+
+  /* ─── GRID ─────────────────────────────────────────────── */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .grid4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
+
+  /* ─── TYPOGRAPHY ─────────────────────────────────────────── */
+  .title { font-size: 36px; font-weight: 800; line-height: 1.2; margin-bottom: 8px; }
+  .subtitle { font-size: 15px; color: var(--gray); line-height: 1.6; }
+  .label { font-size: 11px; color: var(--gray2); font-weight: 500; text-transform: uppercase; letter-spacing: .05em; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .grad { background: linear-gradient(135deg, var(--purple), var(--orange)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .grad2 { background: linear-gradient(135deg, var(--cyan), var(--green)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+  /* ─── BUTTONS ─────────────────────────────────────────────── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 20px; border-radius: 10px;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    border: none; transition: all .2s;
+  }
+  .btn-purple { background: var(--purple); color: #fff; }
+  .btn-purple:hover { background: var(--purple2); }
+  .btn-green { background: rgba(74,222,128,.15); color: var(--green); border: 1px solid rgba(74,222,128,.3); }
+  .btn-red { background: rgba(248,113,113,.15); color: var(--red); border: 1px solid rgba(248,113,113,.3); }
+  .btn-outline { background: transparent; color: var(--white); border: 1px solid var(--border2); }
+
+  /* ─── AVATAR ─────────────────────────────────────────────── */
+  .avatar {
+    width: 44px; height: 44px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 700;
+  }
+  .avatar-dhito { background: linear-gradient(135deg, var(--purple), var(--blue)); }
+  .avatar-maria { background: linear-gradient(135deg, var(--pink), var(--orange)); }
+  .user-row { display: flex; align-items: center; gap: 12px; }
+  .user-name { font-weight: 600; font-size: 14px; }
+  .user-addr { font-size: 11px; color: var(--gray); font-family: 'JetBrains Mono', monospace; }
+
+  /* ─── WALLET CARD ─────────────────────────────────────────── */
+  .wallet-box {
+    background: var(--card2); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .wallet-connected { border-color: var(--green); }
+
+  /* ─── PIPELINE BADGE ─────────────────────────────────────── */
+  .pipe-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 600;
+  }
+  .pipe-price { background: rgba(250,204,21,.1); color: var(--yellow); border: 1px solid rgba(250,204,21,.3); }
+  .pipe-ai { background: rgba(139,92,246,.1); color: var(--purple); border: 1px solid rgba(139,92,246,.3); }
+  .pipe-composite { background: rgba(34,211,238,.1); color: var(--cyan); border: 1px solid rgba(34,211,238,.3); }
+
+  /* ─── STATUS BADGE ─────────────────────────────────────────── */
+  .status-open { background: rgba(74,222,128,.1); color: var(--green); border: 1px solid rgba(74,222,128,.3); }
+  .status-resolving { background: rgba(250,204,21,.1); color: var(--yellow); border: 1px solid rgba(250,204,21,.3); }
+  .status-resolved { background: rgba(139,92,246,.1); color: var(--purple); border: 1px solid rgba(139,92,246,.3); }
+
+  /* ─── MARKET CARD ─────────────────────────────────────────── */
+  .market-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 20px;
+    transition: border-color .3s, box-shadow .3s;
+  }
+  .market-card:hover { border-color: rgba(139,92,246,.5); }
+  .question { font-size: 15px; font-weight: 600; line-height: 1.4; margin: 10px 0; }
+  .pool-bar-wrap { background: var(--border); border-radius: 4px; height: 8px; overflow: hidden; margin: 8px 0; }
+  .pool-bar-yes { height: 100%; background: linear-gradient(90deg, var(--green), #16a34a); border-radius: 4px; transition: width 1s ease; }
+  .pool-row { display: flex; justify-content: space-between; font-size: 11px; color: var(--gray); }
+
+  /* ─── CHAIN LOG ─────────────────────────────────────────── */
+  .chain-log {
+    background: #020617; border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; color: var(--gray);
+    max-height: 200px; overflow-y: auto;
+  }
+  .log-line { margin-bottom: 6px; line-height: 1.5; }
+  .log-ts { color: var(--gray2); margin-right: 8px; }
+  .log-green { color: var(--green); }
+  .log-yellow { color: var(--yellow); }
+  .log-cyan { color: var(--cyan); }
+  .log-purple { color: var(--purple); }
+  .log-orange { color: var(--orange); }
+  .log-blue { color: var(--blue); }
+
+  /* ─── CHAINLINK SERVICE INDICATORS ───────────────────────── */
+  .cl-services {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    padding: 16px; background: var(--card2);
+    border: 1px solid var(--border); border-radius: 12px;
+  }
+  .cl-service {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 12px; border-radius: 20px;
+    font-size: 11px; font-weight: 600;
+    border: 1px solid var(--border);
+    background: var(--card); color: var(--gray2);
+    transition: all .4s;
+  }
+  .cl-service.active {
+    border-color: currentColor;
+    filter: brightness(1);
+  }
+  .cl-service .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .cl-cre { color: var(--blue); }
+  .cl-x402 { color: var(--green); }
+  .cl-feeds { color: var(--yellow); }
+  .cl-streams { color: var(--orange); }
+  .cl-functions { color: var(--pink); }
+  .cl-ccip { color: var(--cyan); }
+  .cl-vrf { color: var(--purple); }
+  .cl-auto { color: var(--red); }
+  .cl-service:not(.active) { opacity: .3; }
+  .cl-service.active .dot { animation: pulseDot .8s infinite; }
+  @keyframes pulseDot { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.6); opacity: .6; } }
+
+  /* ─── TX CARD ─────────────────────────────────────────── */
+  .tx-card {
+    background: var(--card2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .tx-hash { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--cyan); }
+  .tx-conf { font-size: 11px; color: var(--green); }
+
+  /* ─── FLOW STEPS ─────────────────────────────────────────── */
+  .flow-steps { display: flex; flex-direction: column; gap: 0; }
+  .flow-step {
+    display: flex; align-items: flex-start; gap: 16px; padding: 12px 0;
+    position: relative;
+  }
+  .flow-step:not(:last-child)::after {
+    content: ''; position: absolute; left: 15px; top: 44px;
+    width: 2px; height: calc(100% - 16px);
+    background: var(--border);
+  }
+  .flow-dot {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; flex-shrink: 0;
+    border: 2px solid var(--border); background: var(--card2);
+    color: var(--gray2); z-index: 1;
+    transition: all .4s;
+  }
+  .flow-dot.done { border-color: var(--green); background: rgba(74,222,128,.1); color: var(--green); }
+  .flow-dot.active { border-color: var(--purple); background: rgba(139,92,246,.15); color: var(--purple); animation: ring .8s infinite; }
+  @keyframes ring { 0%,100% { box-shadow: 0 0 0 0 rgba(139,92,246,.4); } 50% { box-shadow: 0 0 0 6px rgba(139,92,246,0); } }
+  .flow-content { flex: 1; }
+  .flow-title { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+  .flow-sub { font-size: 11px; color: var(--gray); }
+
+  /* ─── LOADING ─────────────────────────────────────────── */
+  .spinner {
+    width: 18px; height: 18px; border: 2px solid var(--border);
+    border-top-color: var(--purple); border-radius: 50%;
+    animation: spin .8s linear infinite; display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ─── BIG RESULT ─────────────────────────────────────────── */
+  .result-hero {
+    text-align: center; padding: 48px 24px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 24px;
+  }
+  .result-emoji { font-size: 64px; margin-bottom: 16px; }
+  .result-amount { font-size: 48px; font-weight: 900; color: var(--green); }
+  .result-label { font-size: 14px; color: var(--gray); margin-top: 4px; }
+
+  /* ─── STAT CARDS ─────────────────────────────────────────── */
+  .stat-card {
+    background: var(--card2); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px; text-align: center;
+  }
+  .stat-val { font-size: 28px; font-weight: 800; }
+  .stat-lbl { font-size: 11px; color: var(--gray); margin-top: 4px; }
+
+  /* ─── PRICE FEED DISPLAY ─────────────────────────────────── */
+  .price-display {
+    background: #020617; border: 1px solid rgba(250,204,21,.3);
+    border-radius: 16px; padding: 28px; text-align: center;
+  }
+  .price-source { font-size: 11px; color: var(--yellow); font-weight: 600; margin-bottom: 8px; }
+  .price-big { font-size: 56px; font-weight: 900; color: var(--yellow); font-family: 'JetBrains Mono', monospace; }
+  .price-threshold { font-size: 13px; color: var(--gray); margin-top: 8px; }
+  .price-result { font-size: 22px; font-weight: 800; color: var(--green); margin-top: 12px; }
+
+  /* ─── INPUT MOCK ─────────────────────────────────────────── */
+  .input-mock {
+    background: var(--card2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 16px;
+    font-size: 13px; color: var(--white);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .input-fill { color: var(--white); }
+  .input-placeholder { color: var(--gray2); }
+
+  /* ─── NOTIFICATIONS ─────────────────────────────────────── */
+  .notif {
+    position: fixed; top: 80px; right: 24px; z-index: 200;
+    background: var(--card); border: 1px solid var(--green);
+    border-radius: 12px; padding: 14px 18px;
+    min-width: 280px; display: flex; align-items: flex-start; gap: 10px;
+    opacity: 0; transform: translateX(20px);
+    transition: all .4s;
+    box-shadow: 0 8px 32px rgba(0,0,0,.4);
+  }
+  .notif.show { opacity: 1; transform: translateX(0); }
+  .notif-icon { font-size: 18px; flex-shrink: 0; }
+  .notif-title { font-size: 13px; font-weight: 600; }
+  .notif-sub { font-size: 11px; color: var(--gray); margin-top: 2px; }
+
+  /* ─── SECTION HEADER ─────────────────────────────────────── */
+  .section-header { margin-bottom: 24px; }
+  .section-tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(139,92,246,.1); border: 1px solid rgba(139,92,246,.3);
+    border-radius: 20px; padding: 4px 12px;
+    font-size: 11px; color: var(--purple); font-weight: 600;
+    margin-bottom: 12px;
+  }
+
+  /* ─── NAV CONTROLS ─────────────────────────────────────────── */
+  .controls {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    z-index: 150;
+    background: rgba(15,23,42,.95); border: 1px solid var(--border);
+    border-radius: 999px; padding: 10px 20px;
+    display: flex; align-items: center; gap: 12px;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 8px 32px rgba(0,0,0,.5);
+  }
+  .ctrl-btn {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--card2); border: 1px solid var(--border);
+    color: var(--white); cursor: pointer; font-size: 14px;
+    transition: all .2s;
+  }
+  .ctrl-btn:hover { background: var(--purple); border-color: var(--purple); }
+  .ctrl-auto {
+    padding: 0 16px; height: 36px; border-radius: 18px;
+    background: var(--purple); border: none;
+    color: #fff; font-size: 12px; font-weight: 600;
+    cursor: pointer; display: flex; align-items: center; gap: 6px;
+    transition: all .2s;
+  }
+  .ctrl-auto:hover { background: var(--purple2); }
+  .ctrl-auto.paused { background: var(--card2); border: 1px solid var(--border); color: var(--white); }
+  .ctrl-step { font-size: 11px; color: var(--gray); min-width: 60px; text-align: center; }
+
+  /* ─── INTRO HERO ─────────────────────────────────────────── */
+  .intro-hero {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; min-height: 70vh; text-align: center;
+  }
+  .intro-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(139,92,246,.1); border: 1px solid rgba(139,92,246,.3);
+    border-radius: 20px; padding: 6px 16px;
+    font-size: 12px; color: var(--purple); font-weight: 600;
+    margin-bottom: 24px;
+  }
+  .intro-logo {
+    font-size: 72px; font-weight: 900;
+    background: linear-gradient(135deg, var(--purple) 0%, var(--orange) 50%, var(--cyan) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    margin-bottom: 8px; line-height: 1;
+  }
+  .intro-tagline {
+    font-size: 20px; color: var(--gray); max-width: 560px;
+    margin: 0 auto 40px;
+  }
+  .intro-cast {
+    display: flex; gap: 40px; justify-content: center; margin-bottom: 48px;
+  }
+  .cast-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 20px 28px; text-align: center;
+  }
+  .cast-avatar { font-size: 40px; margin-bottom: 10px; }
+  .cast-name { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+  .cast-desc { font-size: 12px; color: var(--gray); }
+  .cast-role { font-size: 11px; color: var(--purple); font-weight: 600; margin-top: 6px; }
+
+  /* ─── CONNECTING ANIMATION ──────────────────────────────── */
+  .metamask-modal {
+    background: var(--card2); border: 1px solid var(--border);
+    border-radius: 20px; padding: 32px; max-width: 360px;
+    margin: 0 auto; text-align: center;
+  }
+  .mm-icon { font-size: 56px; margin-bottom: 16px; }
+  .mm-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+  .mm-sub { font-size: 13px; color: var(--gray); margin-bottom: 24px; }
+  .mm-confirm {
+    background: rgba(249,115,22,.1); border: 1px solid rgba(249,115,22,.3);
+    border-radius: 12px; padding: 14px;
+    display: flex; align-items: center; gap: 12px;
+    text-align: left;
+  }
+  .mm-site { font-size: 12px; color: var(--gray); }
+  .mm-sitename { font-size: 14px; font-weight: 600; color: var(--white); }
+  .mm-actions { display: flex; gap: 10px; margin-top: 16px; }
+  .mm-btn-cancel { flex: 1; padding: 10px; border-radius: 10px; background: var(--card); border: 1px solid var(--border); color: var(--white); font-weight: 600; font-size: 13px; cursor: pointer; }
+  .mm-btn-connect { flex: 1; padding: 10px; border-radius: 10px; background: var(--orange); border: none; color: #fff; font-weight: 600; font-size: 13px; cursor: pointer; }
+
+  @keyframes pulse2 { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+  /* ─── STEP COUNTER ───────────────────────────────────────── */
+  .step-dots { display: flex; gap: 6px; align-items: center; }
+  .step-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border2); transition: all .3s; }
+  .step-dot.done { background: var(--purple); }
+  .step-dot.active { background: var(--cyan); width: 18px; border-radius: 3px; }
+
+  /* ─── PROFIT DISPLAY ─────────────────────────────────────── */
+  .profit-card {
+    background: linear-gradient(135deg, rgba(74,222,128,.05) 0%, rgba(34,211,238,.05) 100%);
+    border: 1px solid rgba(74,222,128,.3);
+    border-radius: 20px; padding: 32px; text-align: center;
+  }
+  .loss-card {
+    background: rgba(248,113,113,.05);
+    border: 1px solid rgba(248,113,113,.2);
+    border-radius: 20px; padding: 32px; text-align: center;
+  }
+
+  /* ─── FINAL SLIDE ─────────────────────────────────────────── */
+  .final-hero {
+    text-align: center; padding: 48px 32px;
+  }
+  .services-final { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 32px; }
+  .service-pill {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border-radius: 20px;
+    font-size: 12px; font-weight: 600;
+    border: 1px solid currentColor;
+    background: rgba(255,255,255,.03);
+  }
+  .check-icon { color: var(--green); }
+</style>
+</head>
+<body>
+
+<!-- NOTIFICATION -->
+<div class="notif" id="notif">
+  <div class="notif-icon" id="notif-icon">✅</div>
+  <div>
+    <div class="notif-title" id="notif-title">Transaction Confirmed</div>
+    <div class="notif-sub" id="notif-sub">Block #18,429,031</div>
+  </div>
+</div>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <div class="logo">OmniOracle</div>
+  <div class="nav-links">
+    <a href="#">Markets</a>
+    <a href="#">Create</a>
+    <a href="#">Portfolio</a>
+    <a href="#">Explorer</a>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center">
+    <div class="chain-badge">
+      <span class="chain-dot"></span>
+      Base Sepolia
+    </div>
+    <div id="nav-wallet" style="font-size:11px;color:var(--gray)"></div>
+  </div>
+</nav>
+
+<!-- PROGRESS -->
+<div class="progress-wrap">
+  <div class="step-dots" id="stepDots"></div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+  <div class="step-label" id="stepLabel">Introduction</div>
+  <div class="step-count" id="stepCount">1 / 10</div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main">
+
+  <!-- ══════ SCENE 0: INTRO ══════ -->
+  <div class="scene active" id="scene-0">
+    <div class="intro-hero">
+      <div class="intro-badge">
+        <span>🔗</span> Chainlink Convergence Hackathon 2026 · Prediction Markets Track
+      </div>
+      <div class="intro-logo">OmniOracle</div>
+      <div style="font-size:16px;color:var(--gray);margin-bottom:8px">"Zapier for Prediction Market Oracles"</div>
+      <p class="intro-tagline">Permissionless market factory with <strong style="color:var(--white)">5 composable oracle pipelines</strong> and <strong style="color:var(--white)">8 Chainlink services</strong>. Anyone creates a market, anyone bets, and the <strong style="color:var(--cyan)">right oracle</strong> resolves it.</p>
+
+      <div class="intro-cast">
+        <div class="cast-card card-glow">
+          <div class="cast-avatar">👨‍💻</div>
+          <div class="cast-name">Dhito</div>
+          <div class="cast-desc">Has 0.15 ETH<br>Wants to profit from<br>ETH price prediction</div>
+          <div class="cast-role">✅ Market Creator + Bettor</div>
+        </div>
+        <div style="display:flex;align-items:center;font-size:28px;color:var(--gray)">VS</div>
+        <div class="cast-card card-orange">
+          <div class="cast-avatar">👩‍💼</div>
+          <div class="cast-name">Maria</div>
+          <div class="cast-desc">Has 0.10 ETH<br>Bets ETH will NOT<br>hit the threshold</div>
+          <div class="cast-role">🎯 Counter-Bettor</div>
+        </div>
+      </div>
+
+      <div class="cl-services" style="max-width:700px;margin:0 auto 32px;justify-content:center">
+        <div class="cl-service cl-cre active"><span class="dot"></span>CRE</div>
+        <div class="cl-service cl-x402 active"><span class="dot"></span>x402</div>
+        <div class="cl-service cl-feeds active"><span class="dot"></span>Data Feeds</div>
+        <div class="cl-service cl-streams active"><span class="dot"></span>Data Streams</div>
+        <div class="cl-service cl-functions active"><span class="dot"></span>Functions</div>
+        <div class="cl-service cl-ccip active"><span class="dot"></span>CCIP</div>
+        <div class="cl-service cl-vrf active"><span class="dot"></span>VRF v2.5</div>
+        <div class="cl-service cl-auto active"><span class="dot"></span>Automation</div>
+      </div>
+
+      <p style="font-size:13px;color:var(--gray2)">Follow Dhito & Maria through the full OmniOracle lifecycle →</p>
+    </div>
+  </div>
+
+  <!-- ══════ SCENE 1: DHITO CONNECTS WALLET ══════ -->
+  <div class="scene" id="scene-1">
+    <div class="section-header">
+      <div class="section-tag"><span>01</span> Wallet Connection</div>
+      <h2 class="title">Dhito connects his wallet</h2>
+      <p class="subtitle">OmniOracle uses wagmi with injected connectors — no WalletConnect needed, direct MetaMask handshake.</p>
+    </div>
+
+    <div class="grid2">
+      <div>
+        <div class="card" style="margin-bottom:16px">
+          <div class="user-row" style="margin-bottom:16px">
+            <div class="avatar avatar-dhito">D</div>
+            <div>
+              <div class="user-name">Dhito</div>
+              <div class="user-addr">Not connected</div>
+            </div>
+          </div>
+
+          <div class="metamask-modal" style="max-width:100%;border-radius:12px;padding:20px">
+            <div class="mm-icon">🦊</div>
+            <div class="mm-title">Opening MetaMask...</div>
+            <div class="mm-sub">Confirm connection in the extension</div>
+            <div class="mm-confirm">
+              <div>🌐</div>
+              <div>
+                <div class="mm-site">Requesting connection from</div>
+                <div class="mm-sitename">omnioracle.vercel.app</div>
+              </div>
+            </div>
+            <div class="mm-actions">
+              <button class="mm-btn-cancel">Reject</button>
+              <button class="mm-btn-connect" id="btnConnectDhito" onclick="connectDhito()">Connect</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card wallet-connected" id="dhito-wallet-card" style="display:none">
+          <div class="user-row">
+            <div class="avatar avatar-dhito">D</div>
+            <div style="flex:1">
+              <div class="user-name">Dhito ✅ Connected</div>
+              <div class="user-addr" id="dhito-addr">0xDh1t0...f3a2</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:16px;font-weight:700;color:var(--green)">0.1500 ETH</div>
+              <div style="font-size:11px;color:var(--gray)">Base Sepolia</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card" style="margin-bottom:16px">
+          <div class="label" style="margin-bottom:12px">🔗 Chainlink Services Active</div>
+          <div class="cl-services" id="services-s1">
+            <div class="cl-service cl-cre"><span class="dot"></span>CRE</div>
+            <div class="cl-service cl-x402"><span class="dot"></span>x402</div>
+            <div class="cl-service cl-feeds"><span class="dot"></span>Data Feeds</div>
+            <div class="cl-service cl-streams"><span class="dot"></span>Data Streams</div>
+            <div class="cl-service cl-functions"><span class="dot"></span>Functions</div>
+            <div class="cl-service cl-ccip"><span class="dot"></span>CCIP</div>
+            <div class="cl-service cl-vrf"><span class="dot"></span>VRF v2.5</div>
+            <div class="cl-service cl-auto"><span class="dot"></span>Automation</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="label" style="margin-bottom:12px">Network details</div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div class="tx-card">
+              <span style="font-size:12px;color:var(--gray)">Chain</span>
+              <span style="font-size:12px;font-weight:600;color:var(--cyan)">Base Sepolia (84532)</span>
+            </div>
+            <div class="tx-card">
+              <span style="font-size:12px;color:var(--gray)">MarketFactory</span>
+              <span class="tx-hash">0xd3A8...02c2</span>
+            </div>
+            <div class="tx-card">
+              <span style="font-size:12px;color:var(--gray)">OmniResolver</span>
+              <span class="tx-hash">0xc751...B555</span>
+            </div>
+            <div class="tx-card">
+              <span style="font-size:12px;color:var(--gray)">Block</span>
+              <span style="font-size:12px;font-weight:600;color:var(--green)" id="blockNum">18,429,031</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════ SCENE 2: CREATE MARKET ══════ -->
+  <div class="scene" id="scene-2">
+    <div class="section-header">
+      <div class="section-tag"><span>02</span> Create Market — <span style="color:var(--orange)">x402 · CRE · VRF</span></div>
+      <h2 class="title">Dhito creates a prediction market</h2>
+      <p class="subtitle">$0.01 USDC paid via <strong style="color:var(--green)">Chainlink x402</strong> · validated by <strong style="color:var(--blue)">CRE market-factory workflow</strong></p>
+    </div>
+
+    <div class="grid2">
+      <div>
+        <div class="card" style="margin-bottom:16px">
+          <div class="user-row" style="margin-bottom:16px">
+            <div class="avatar avatar-dhito">D</div>
+            <div><div class="user-name">Dhito — Creating Market</div><div class="user-addr">0xDh1t0...f3a2</div></div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div>
+              <div class="label" style="margin-bottom:6px">Market Question</div>
+              <div class="input-mock">
+                <span class="input-fill">Will ETH exceed $5,000 by March 2026?</span>
+                <span style="color:var(--green);font-size:11px">✓</span>
+              </div>
+            </div>
+            <div class="grid2" style="gap:10px">
+              <div>
+                <div class="label" style="margin-bottom:6px">Category</div>
+                <div class="input-mock"><span class="input-fill">🪙 Crypto</span></div>
+              </div>
+              <div>
+                <div class="label" style="margin-bottom:6px">Deadline</div>
+                <div class="input-mock"><span class="input-fill">Mar 31, 2026</span></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="label" style="margin-bottom:8px">⚡ Pipeline Type — <span style="color:var(--yellow)">Price Feed</span> selected</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div class="input-mock" style="border-color:var(--yellow);background:rgba(250,204,21,.05)">
+                  <span style="color:var(--yellow)">⚡ Price Feed</span>
+                  <span style="color:var(--yellow);font-size:11px">✓</span>
+                </div>
+                <div class="input-mock" style="opacity:.3"><span>🤖 AI Grounded</span></div>
+                <div class="input-mock" style="opacity:.3"><span>🌐 Functions API</span></div>
+                <div class="input-mock" style="opacity:.3"><span>🔀 Composite</span></div>
+              </div>
+            </div>
+
+            <div style="background:rgba(250,204,21,.05);border:1px solid rgba(250,204,21,.2);border-radius:10px;padding:14px">
+              <div class="label" style="margin-bottom:10px;color:var(--yellow)">Price Feed Configuration</div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div class="tx-card">
+                  <span style="font-size:12px;color:var(--gray)">Feed Address</span>
+                  <span class="tx-hash">ETH/USD · 0x4EB6...8f9c</span>
+                </div>
+                <div class="tx-card">
+                  <span style="font-size:12px;color:var(--gray)">Threshold</span>
+                  <span style="font-size:13px;font-weight:700;color:var(--yellow)">$5,000.00</span>
+                </div>
+                <div class="tx-card">
+                  <span style="font-size:12px;color:var(--gray)">Direction</span>
+                  <span style="font-size:12px;font-weight:600;color:var(--green)">↑ Above</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="tx-card">
+              <span style="font-size:12px;color:var(--gray)">Seed Liquidity</span>
+              <span style="font-size:14px;font-weight:700;color:var(--white)">0.02 ETH</span>
+            </div>
+
+            <div style="background:rgba(74,222,128,.05);border:1px solid rgba(74,222,128,.2);border-radius:10px;padding:12px;display:flex;align-items:center;justify-content:space-between">
+              <div style="font-size:12px;color:var(--gray)">x402 payment: <strong style="color:var(--green)">$0.01 USDC</strong></div>
+              <span style="font-size:11px;color:var(--green)">✅ Paid · Chainlink x402</span>
+            </div>
+
+            <button class="btn btn-purple" style="width:100%;justify-content:center;padding:14px" onclick="createMarket()">
+              🚀 Create Market
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card" style="margin-bottom:16px">
+          <div class="label" style="margin-bottom:12px">🔗 Chainlink Services Active</div>
+          <div class="cl-services" id="services-s2">
+            <div class="cl-service cl-cre active"><span class="dot"></span>CRE</div>
+            <div class="cl-service cl-x402 active"><span class="dot"></span>x402</div>
+            <div class="cl-service cl-feeds"><span class="dot"></span>Data Feeds</div>
+            <div class="cl-service cl-streams"><span class="dot"></span>Data Streams</div>
+            <div class="cl-service cl-functions"><span class="dot"></span>Functions</div>
+            <div class="cl-service cl-ccip"><span class="dot"></span>CCIP</div>
+            <div class="cl-service cl-vrf active"><span class="dot"></span>VRF v2.5</div>
+            <div class="cl-service cl-auto"><span class="dot"></span>Automation</div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:16px">
+          <div class="label" style="margin-bottom:12px">⚙️ CRE: market-factory workflow</div>
+          <div class="flow-steps">
+            <div class="flow-step">
+              <div class="flow-dot done" id="cre-step-0">✓</div>
+              <div class="flow-content">
+                <div class="flow-title">HTTP trigger received</div>
+                <div class="flow-sub">POST /create-market · x402 verified · $0.01 USDC</div>
+              </div>
+            </div>
+            <div class="flow-step">
+              <div class="flow-dot active" id="cre-step-1">2</div>
+              <div class="flow-content">
+                <div class="flow-title">Gemini AI validates question</div>
+                <div class="flow-sub" id="gemini-status">Checking question clarity & market viability...</div>
+              </div>
+            </div>
+            <div class="flow-step">
+              <div class="flow-dot" id="cre-step-2">3</div>
+              <div class="flow-content">
+                <div class="flow-title">Encode & sign onReport(0x00)</div>
+                <div class="flow-sub">CRE Forwarder · 0x82300bd7...cDF3e5</div>
+              </div>
+            </div>
+            <div class="flow-step">
+              <div class="flow-dot" id="cre-step-3">4</div>
+              <div class="flow-content">
+                <div class="flow-title">Market created on-chain</div>
+                <div class="flow-sub">MarketFactory.createMarket() · VRF selects featured</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="chain-log" id="log-create">
+          <div class="log-line"><span class="log-ts">[02:31:04]</span> <span class="log-cyan">x402</span> Payment verified · $0.01 USDC · Base Sepolia</div>
+          <div class="log-line"><span class="log-ts">[02:31:04]</span> <span class="log-blue">CRE</span> market-factory HTTP trigger received</div>
+          <div class="log-line"><span class="log-ts">[02:31:05]</span> <span class="log-purple">GEMINI</span> Validating: "Will ETH exceed $5,000 by March 2026?"</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════ SCENE 3: MARKET LIVE ══════ -->
+  <div class="scene" id="scene-3">
+    <div class="section-header">
+      <div class="section-tag"><span>03</span> Market Live</div>
+      <h2 class="title">Market #0 is now open for bets</h2>
+      <p class="subtitle">Created on-chain · <strong style="color:var(--yellow)">Price Feed pipeline</strong> configured immutably · CRE oracle-resolver watching for resolution event</p>
+    </div>
+
+    <div class="grid2">
+      <div>
+        <div class="market-card card-glow" style="margin-bottom:16px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <span style="font-size:11px;color:var(--gray2)">#0 · Crypto</span>
+            <div style="display:flex;gap:6px">
+              <span class="pipe-badge pipe-price">⚡ Price Feed</span>
+              <span class="pipe-badge status-open">● Open</span>
+            </div>
+          </div>
+          <p class="question">Will ETH exceed $5,000 by March 2026?</p>
+          <div style="display:flex;gap:8px;margin-bottom:12px;font-size:11px;color:var(--gray)">
+            <span>📅 Deadline: Mar 31, 2026</span>
+            <span>·</span>
+            <span>🔗 Chainlink Data Feed: ETH/USD</span>
+          </div>
+          <div class="pool-bar-wrap">
+            <div class="pool-bar-yes" id="pool-bar-0" style="width:50%"></div>
+          </div>
+          <div class="pool-row">
+            <span class="log-green">YES <span id="yes-pct-0">50</span>%</span>
+            <span style="color:var(--white);font-weight:600"><span id="total-pool-0">0.0200</span> ETH</span>
+            <span style="color:var(--red)">NO <span id="no-pct-0">50</span>%</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="label" style="margin-bottom:12px">Pipeline Config (Immutable)</div>
+          <div style="background:#020617;border:1px solid rgba(250,204,21,.2);border-radius:10px;padding:14px;font-family:'JetBrains Mono',monospace;font-size:11px">
+            <div style="color:var(--gray2);margin-bottom:8px">// OraclePipeline.sol · marketId=0</div>
+            <div><span style="color:var(--yellow)">pipelineType</span>: <span style="color:var(--green)">0</span> <span style="color:var(--gray2)">// PRICE_FEED</span></div>
+            <div><span style="color:var(--yellow)">priceFeedAddress</span>: <span style="color:var(--cyan)">0x4EB6...</span></div>
+            <div><span style="color:var(--yellow)">priceThreshold</span>: <span style="color:var(--orange)">500000000000</span> <span style="color:var(--gray2)">// $5000 · 8 decimals</span></div>
+            <div><span style="color:var(--yellow)">isAbove</span>: <span style="color:var(--purple)">true</span></div>
+          </div>
+          <div style="margin-top:10px;font-size:11px;color:var(--gray2);display:flex;align-items:center;gap:6px">
+            <span style="color:var(--green)">🔒</span> Config is immutable after market creation — no manipulation possible
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card" style="margin-bottom:16px">
+          <div class="label" style="margin-bottom:12px">✅ Transaction Confirmed</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div class="tx-card">
+              <span style="font-size:12px;color:var(--gray)">Tx Hash</span>
+              <span class="tx-hash">0x8a2f...9c1e</span>
+            </div>
+            <div class="tx-card">
+              <span style="font-size:12px;color:var(--gray)">Block</span>
+              <span style="font-size:12px;font-weight:600;color:var(--green)">#18,429,031</span>
+            </div>
+            <div class="tx-card">
+              <span style="font-size:12px;color:var(--gray)">Gas Used</span>
+              <span style="font-size:12px;color:var(--white)">312,450</span>
+            </div>
+            <div class="tx-card">
+              <span style="font-size:12px;color:var(--gray)">From</span>
+              <span class="tx-hash">0xDh1t0...f3a2</span>
+            </div>
+            <div class="tx-card">
+              <span style="font-size:12px;color:var(--gray)">Function</span>
+              <span style="font-size:12px;font-weight:600;color:var(--purple)">onReport(0x00)</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="label" style="margin-bottom:12px">🔗 Chainlink Services Active</div>
+          <div class="cl-services">
+            <div class="cl-service cl-cre active"><span class="dot"></span>CRE</div>
+            <div class="cl-service cl-x402 active"><span class="dot"></span>x402</div>
+            <div class="cl-service cl-feeds"><span class="dot"></span>Data Feeds</div>
+            <div class="cl-service cl-streams"><span class="dot"></span>Data Streams</div>
+            <div class="cl-service cl-functions"><span class="dot"></span>Functions</div>
+            <div class="cl-service cl-ccip"><span class="dot"></span>CCIP</div>
+            <div class="cl-service cl-vrf active"><span class="dot"></span>VRF v2.5</div>
+            <div class="cl-service cl-auto active"><span class="dot"></span>Automation</div>
+          </div>
+          <div style="margin-top:12px;font-size:11px;color:var(--gray2)">
+            → Automation: watching for deadline · CRE: waiting for ResolutionRequested event
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════ SCENE 4: BOTH BET ══════ -->
+  <div class="scene" id="scene-4">
+    <div class="section-header">
+      <div class="section-tag"><span>04</span> Placing Bets</div>
+      <h2 class="title">Dhito & Maria place their bets</h2>
+      <p class="subtitle">Two wallets, opposite predictions, ETH locked in the MarketFactory contract.</p>
+    </div>
+
+    <div class="grid2">
+      <!-- DHITO -->
+      <div class="card card-green">
+        <div class="user-row" style="margin-bottom:20px">
+          <div class="avatar avatar-dhito">D</div>
+          <div>
+            <div class="user-name">Dhito</div>
+            <div class="user-addr">0xDh1t0...f3a2</div>
+          </div>
+          <div style="margin-left:auto">
+            <div style="font-size:13px;color:var(--gray)">Balance</div>
+            <div style="font-size:16px;font-weight:700;color:var(--white)">0.1500 ETH</div>
+          </div>
+        </div>
+
+        <div style="background:rgba(74,222,128,.05);border:1px solid rgba(74,222,128,.2);border-radius:12px;padding:16px;margin-bottom:16px">
+          <div style="font-size:11px;color:var(--gray);margin-bottom:6px">Dhito thinks ETH WILL hit $5,000</div>
+          <div style="font-size:22px;font-weight:800;color:var(--green)">✅ YES</div>
+          <div style="font-size:13px;color:var(--gray);margin-top:4px">Bet amount: <strong style="color:var(--white)">0.10 ETH</strong></div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div class="tx-card">
+            <span style="font-size:12px;color:var(--gray)">Tx Hash</span>
+            <span class="tx-hash">0x3f8a...2d9c</span>
+          </div>
+          <div class="tx-card">
+            <span style="font-size:12px;color:var(--gray)">Function</span>
+            <span style="font-size:12px;font-weight:600;color:var(--purple)">predict(0, true)</span>
+          </div>
+          <div class="tx-card">
+            <span style="font-size:12px;color:var(--gray)">Value</span>
+            <span style="font-size:12px;font-weight:700;color:var(--green)">0.10 ETH</span>
+          </div>
+          <div class="tx-card">
+            <span style="font-size:12px;color:var(--gray)">Status</span>
+            <span style="font-size:12px;color:var(--green)">✅ Confirmed #18,429,112</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- MARIA -->
+      <div class="card card-orange">
+        <div class="user-row" style="margin-bottom:20px">
+          <div class="avatar avatar-maria">M</div>
+          <div>
+            <div class="user-name">Maria</div>
+            <div class="user-addr">0xMar1a...b8f1</div>
+          </div>
+          <div style="margin-left:auto">
+            <div style="font-size:13px;color:var(--gray)">Balance</div>
+            <div style="font-size:16px;font-weight:700;color:var(--white)">0.1000 ETH</div>
+          </div>
+        </div>
+
+        <div style="background:rgba(249,115,22,.05);border:1px solid rgba(249,115,22,.2);border-radius:12px;padding:16px;margin-bottom:16px">
+          <div style="font-size:11px;color:var(--gray);margin-bottom:6px">Maria thinks ETH WON'T hit $5,000</div>
+          <div style="font-size:22px;font-weight:800;color:var(--orange)">❌ NO</div>
+          <div style="font-size:13px;color:var(--gray);margin-top:4px">Bet amount: <strong style="color:var(--white)">0.08 ETH</strong></div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div class="tx-card">
+            <span style="font-size:12px;color:var(--gray)">Tx Hash</span>
+            <span class="tx-hash">0x7c2b...e4a1</span>
+          </div>
+          <div class="tx-card">
+            <span style="font-size:12px;color:var(--gray)">Function</span>
+            <span style="font-size:12px;font-weight:600;color:var(--purple)">predict(0, false)</span>
+          </div>
+          <div class="tx-card">
+            <span style="font-size:12px;color:var(--gray)">Value</span>
+            <span style="font-size:12px;font-weight:700;color:var(--orange)">0.08 ETH</span>
+          </div>
+          <div class="tx-card">
+            <span style="font-size:12px;color:var(--gray)">Status</span>
+            <span style="font-size:12px;color:var(--green)">✅ Confirmed #18,429,189</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- POOL STATE -->
+    <div class="card" style="margin-top:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div class="label">Market Pool — Updated</div>
+        <span style="font-size:13px;font-weight:700;color:var(--white)">Total: 0.2000 ETH</span>
+      </div>
+      <div class="pool-bar-wrap" style="height:12px">
+        <div class="pool-bar-yes" style="width:58%"></div>
+      </div>
+      <div class="pool-row" style="margin-top:6px">
+        <span style="color:var(--green);font-weight:600">YES 58% · 0.12 ETH (Dhito: 0.10 + seed 0.01 + others)</span>
+        <span style="color:var(--red);font-weight:600">NO 42% · 0.08 ETH (Maria)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════ SCENE 5: DEADLINE PASSES ══════ -->
+  <div class="scene" id="scene-5">
+    <div class="section-header">
+      <div class="section-tag"><span>05</span> Deadline — <span style="color:var(--red)">Automation</span></div>
+      <h2 class="title">Deadline passes — Automation triggers</h2>
+      <p class="subtitle"><strong style="color:var(--red)">Chainlink Automation</strong> detects the expired market via <code style="color:var(--cyan)">checkUpkeep()</code> and calls <code style="color:var(--cyan)">performUpkeep()</code></p>
+    </div>
+
+    <div class="grid2">
+      <div>
+        <div class="card" style="margin-bottom:16px;text-align:center;padding:32px">
+          <div style="font-size:48px;margin-bottom:12px">⏰</div>
+          <div style="font-size:22px;font-weight:800;color:var(--red);margin-bottom:4px">Deadline Expired</div>
+          <div style="font-size:13px;color:var(--gray)">Mar 31, 2026 · 00:00:00 UTC</div>
+          <div style="margin-top:16px;padding:12px;background:rgba(248,113,113,.05);border:1px solid rgba(248,113,113,.2);border-radius:10px">
+            <div style="font-size:12px;color:var(--gray)">Automation Upkeep</div>
+            <div style="font-size:13px;font-weight:600;color:var(--red);margin-top:4px">checkUpkeep() → TRUE</div>
+            <div style="font-size:11px;color:var(--gray);margin-top:2px">Market #0 found expired · triggering resolution</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="label" style="margin-bottom:12px">AutoResolver.sol · performUpkeep()</div>
+          <div style="background:#020617;border:1px solid var(--border);border-radius:10px;padding:14px;font-family:'JetBrains Mono',monospace;font-size:11px">
+            <div style="color:var(--gray2);margin-bottom:6px">// AutoResolver.sol:53</div>
+            <div><span style="color:var(--blue)">function</span> <span style="color:var(--yellow)">performUpkeep</span>(...) {</div>
+            <div style="padding-left:16px"><span style="color:var(--blue)">for</span> (uint i = start; i &lt; end; i++) {</div>
+            <div style="padding-left:32px;color:var(--green)">// market #0 → past deadline!</div>
+            <div style="padding-left:32px"><span style="color:var(--cyan)">factory.requestResolution(0);</span></div>
+            <div style="padding-left:16px">}</div>
+            <div>}</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card" style="margin-bottom:16px">
+          <div class="label" style="margin-bottom:12px">🔗 Chainlink Services Active</div>
+          <div class="cl-services">
+            <div class="cl-service cl-cre active"><span class="dot"></span>CRE</div>
+            <div class="cl-service cl-x402"><span class="dot"></span>x402</div>
+            <div class="cl-service cl-feeds"><span class="dot"></span>Data Feeds</div>
+            <div class="cl-service cl-streams"><span class="dot"></span>Data Streams</div>
+            <div class="cl-service cl-functions"><span class="dot"></span>Functions</div>
+            <div class="cl-service cl-ccip"><span class="dot"></span>CCIP</div>
+            <div class="cl-service cl-vrf"><span class="dot"></span>VRF v2.5</div>
+            <div class="cl-service cl-auto active"><span class="dot"></span>Automation</div>
+          </div>
+        </div>
+
+        <div class="chain-log">
+          <div class="log-line"><span class="log-ts">[Mar 31 00:00:01]</span> <span class="log-orange">AUTOMATION</span> checkUpkeep() scanning markets...</div>
+          <div class="log-line"><span class="log-ts">[Mar 31 00:00:01]</span> <span class="log-orange">AUTOMATION</span> Market #0 deadline passed! upkeepNeeded=true</div>
+          <div class="log-line"><span class="log-ts">[Mar 31 00:00:02]</span> <span class="log-orange">AUTOMATION</span> performUpkeep() → factory.requestResolution(0)</div>
+          <div class="log-line"><span class="log-ts">[Mar 31 00:00:02]</span> <span class="log-yellow">EVENT</span> ResolutionRequested(marketId=0, pipelineType=0)</div>
+          <div class="log-line"><span class="log-ts">[Mar 31 00:00:02]</span> <span class="log-blue">CRE</span> oracle-resolver EVM Log trigger fired 🔥</div>
+        </div>
+
+        <div class="card" style="margin-top:16px">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div class="label" style="margin-bottom:4px">Emitted Event</div>
+              <code style="font-size:12px;color:var(--cyan);font-family:'JetBrains Mono',monospace">ResolutionRequested(0, 0)</code>
+            </div>
+            <span class="pipe-badge status-resolving">⟳ Resolving</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════ SCENE 6: ORACLE RESOLUTION ══════ -->
+  <div class="scene" id="scene-6">
+    <div class="section-header">
+      <div class="section-tag"><span>06</span> Oracle Resolution — <span style="color:var(--yellow)">Data Feeds · CRE</span></div>
+      <h2 class="title">CRE oracle-resolver reads Chainlink Data Feed</h2>
+      <p class="subtitle">EVM Log trigger detected → CRE routes to <strong style="color:var(--yellow)">resolvePriceFeed()</strong> → reads ETH/USD on-chain → deterministic result</p>
+    </div>
+
+    <div class="grid2">
+      <div>
+        <div class="price-display" style="margin-bottom:16px">
+          <div class="price-source">⚡ Chainlink ETH/USD Data Feed · Round #19,847,321</div>
+          <div class="price-big" id="priceCounter">$0</div>
+          <div class="price-threshold">Threshold: $5,000.00 · Direction: Above ↑</div>
+          <div class="price-result" id="priceResult" style="display:none">✅ ETH is ABOVE $5,000 → YES</div>
+        </div>
+
+        <div class="card">
+          <div class="label" style="margin-bottom:12px">⚙️ CRE oracle-resolver · logCallback.ts</div>
+          <div class="flow-steps">
+            <div class="flow-step">
+              <div class="flow-dot done">✓</div>
+              <div class="flow-content">
+                <div class="flow-title">EVM Log trigger received</div>
+                <div class="flow-sub">ResolutionRequested(marketId=0, pipelineType=0)</div>
+              </div>
+            </div>
+            <div class="flow-step">
+              <div class="flow-dot done">✓</div>
+              <div class="flow-content">
+                <div class="flow-title">Read pipeline config on-chain</div>
+                <div class="flow-sub">getPipelineConfig(0) → PRICE_FEED · ETH/USD · $5000 · above</div>
+              </div>
+            </div>
+            <div class="flow-step">
+              <div class="flow-dot" id="resolve-step-2" style="">3</div>
+              <div class="flow-content">
+                <div class="flow-title">resolvePriceFeed() executed</div>
+                <div class="flow-sub" id="feed-status">Reading Chainlink ETH/USD Data Feed...</div>
+              </div>
+            </div>
+            <div class="flow-step">
+              <div class="flow-dot" id="resolve-step-3">4</div>
+              <div class="flow-content">
+                <div class="flow-title">Encode & sign onReport(0x01)</div>
+                <div class="flow-sub">outcome=YES (0) · confidence=10000 (100%)</div>
+              </div>
+            </div>
+            <div class="flow-step" style="margin-bottom:0">
+              <div class="flow-dot" id="resolve-step-4">5</div>
+              <div class="flow-content">
+                <div class="flow-title">Market resolved on-chain</div>
+                <div class="flow-sub">MarketFactory.onReport(0x01) → status = Resolved</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card" style="margin-bottom:16px">
+          <div class="label" style="margin-bottom:12px">🔗 Chainlink Services Active</div>
+          <div class="cl-services">
+            <div class="cl-service cl-cre active"><span class="dot"></span>CRE</div>
+            <div class="cl-service cl-x402"><span class="dot"></span>x402</div>
+            <div class="cl-service cl-feeds active"><span class="dot"></span>Data Feeds</div>
+            <div class="cl-service cl-streams"><span class="dot"></span>Data Streams</div>
+            <div class="cl-service cl-functions"><span class="dot"></span>Functions</div>
+            <div class="cl-service cl-ccip active"><span class="dot"></span>CCIP</div>
+            <div class="cl-service cl-vrf"><span class="dot"></span>VRF v2.5</div>
+            <div class="cl-service cl-auto active"><span class="dot"></span>Automation</div>
+          </div>
+        </div>
+
+        <div class="chain-log" id="log-resolve" style="max-height:280px">
+          <div class="log-line"><span class="log-ts">[00:00:03]</span> <span class="log-blue">CRE</span> oracle-resolver workflow started</div>
+          <div class="log-line"><span class="log-ts">[00:00:03]</span> <span class="log-blue">CRE</span> pipelineType = 0 (PRICE_FEED)</div>
+          <div class="log-line"><span class="log-ts">[00:00:03]</span> <span class="log-yellow">FEEDS</span> Reading ETH/USD · 0x4EB6...8f9c</div>
+          <div class="log-line"><span class="log-ts">[00:00:04]</span> <span class="log-yellow">FEEDS</span> Round #19,847,321 · answer = 524700000000</div>
+          <div class="log-line"><span class="log-ts">[00:00:04]</span> <span class="log-green">RESULT</span> $5,247.00 > $5,000.00 → <strong>YES ✅</strong></div>
+          <div class="log-line"><span class="log-ts">[00:00:04]</span> <span class="log-blue">CRE</span> confidence = 10000 (100% — deterministic)</div>
+          <div class="log-line"><span class="log-ts">[00:00:04]</span> <span class="log-blue">CRE</span> Encoding report: [marketId=0, outcome=0, conf=10000]</div>
+          <div class="log-line"><span class="log-ts">[00:00:05]</span> <span class="log-purple">ON-CHAIN</span> onReport(0x01) called · CRE Forwarder</div>
+          <div class="log-line"><span class="log-ts">[00:00:05]</span> <span class="log-cyan">CCIP</span> cross-chain-sync broadcasting result...</div>
+          <div class="log-line"><span class="log-ts">[00:00:05]</span> <span class="log-green">✓ RESOLVED</span> Market #0 · outcome = <strong>YES</strong> · 100% confidence</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════ SCENE 7: MARKET RESOLVED ══════ -->
+  <div class="scene" id="scene-7">
+    <div class="section-header">
+      <div class="section-tag"><span>07</span> Resolution Complete</div>
+      <h2 class="title">Market #0 resolved — YES wins!</h2>
+      <p class="subtitle">ETH closed at <strong style="color:var(--yellow)">$5,247.00</strong> · Above threshold of $5,000 · Chainlink Data Feed confirmed · Confidence 100%</p>
+    </div>
+
+    <div class="grid2">
+      <div>
+        <div class="market-card" style="border-color:var(--green);box-shadow:0 0 30px rgba(74,222,128,.15);margin-bottom:16px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <span style="font-size:11px;color:var(--gray2)">#0 · Crypto</span>
+            <div style="display:flex;gap:6px">
+              <span class="pipe-badge pipe-price">⚡ Price Feed</span>
+              <span class="pipe-badge status-resolved">✅ Resolved</span>
+            </div>
+          </div>
+          <p class="question">Will ETH exceed $5,000 by March 2026?</p>
+          <div style="background:rgba(74,222,128,.05);border:1px solid rgba(74,222,128,.3);border-radius:10px;padding:16px;text-align:center;margin:12px 0">
+            <div style="font-size:11px;color:var(--gray);margin-bottom:4px">Outcome</div>
+            <div style="font-size:32px;font-weight:900;color:var(--green)">✅ YES</div>
+            <div style="font-size:13px;color:var(--gray);margin-top:4px">ETH/USD = <strong style="color:var(--yellow)">$5,247.00</strong> · 100% confidence</div>
+            <div style="font-size:11px;color:var(--gray2);margin-top:2px">Resolved by: Chainlink Data Feed (deterministic)</div>
+          </div>
+          <div class="pool-bar-wrap">
+            <div class="pool-bar-yes" style="width:58%"></div>
+          </div>
+          <div class="pool-row">
+            <span style="color:var(--green)">YES 58% · 0.12 ETH</span>
+            <span style="color:var(--white);font-weight:600">0.2000 ETH total</span>
+            <span style="color:var(--gray2)">NO 42% · 0.08 ETH</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card" style="margin-bottom:16px">
+          <div class="label" style="margin-bottom:12px">Payout Calculation</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div class="tx-card">
+              <span style="font-size:12px;color:var(--gray)">Total Pool</span>
+              <span style="font-size:13px;font-weight:700;color:var(--white)">0.2000 ETH</span>
+            </div>
+            <div class="tx-card">
+              <span style="font-size:12px;color:var(--gray)">Platform Fee (2%)</span>
+              <span style="font-size:12px;color:var(--gray)">−0.0040 ETH</span>
+            </div>
+            <div class="tx-card">
+              <span style="font-size:12px;color:var(--gray)">Distributable</span>
+              <span style="font-size:13px;font-weight:700;color:var(--yellow)">0.1960 ETH</span>
+            </div>
+            <div style="border-top:1px solid var(--border);padding-top:8px">
+              <div class="tx-card" style="background:rgba(74,222,128,.05);border-color:rgba(74,222,128,.3)">
+                <span style="font-size:12px;color:var(--green)">Dhito's share (83.3%)</span>
+                <span style="font-size:14px;font-weight:800;color:var(--green)">≈ 0.1633 ETH</span>
+              </div>
+            </div>
+            <div class="tx-card">
+              <span style="font-size:12px;color:var(--gray)">Dhito bet</span>
+              <span style="font-size:12px;color:var(--white)">0.10 ETH</span>
+            </div>
+            <div class="tx-card" style="background:rgba(74,222,128,.05);border-color:rgba(74,222,128,.3)">
+              <span style="font-size:12px;color:var(--green);font-weight:700">Dhito PROFIT</span>
+              <span style="font-size:14px;font-weight:900;color:var(--green)">+0.0633 ETH 🎉</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="label" style="margin-bottom:12px">🔗 Services used in resolution</div>
+          <div class="cl-services">
+            <div class="cl-service cl-cre active"><span class="dot"></span>CRE ✓</div>
+            <div class="cl-service cl-feeds active"><span class="dot"></span>Data Feeds ✓</div>
+            <div class="cl-service cl-ccip active"><span class="dot"></span>CCIP ✓</div>
+            <div class="cl-service cl-auto active"><span class="dot"></span>Automation ✓</div>
+            <div class="cl-service cl-x402 active"><span class="dot"></span>x402 ✓</div>
+            <div class="cl-service cl-vrf active"><span class="dot"></span>VRF ✓</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════ SCENE 8: CLAIM ══════ -->
+  <div class="scene" id="scene-8">
+    <div class="section-header">
+      <div class="section-tag"><span>08</span> Claim Winnings</div>
+      <h2 class="title">Dhito claims his winnings 🎉</h2>
+    </div>
+
+    <div class="grid2">
+      <!-- DHITO WIN -->
+      <div class="profit-card">
+        <div style="font-size:56px;margin-bottom:16px">🎉</div>
+        <div class="user-row" style="justify-content:center;margin-bottom:20px">
+          <div class="avatar avatar-dhito" style="width:52px;height:52px;font-size:22px">D</div>
+          <div>
+            <div style="font-size:18px;font-weight:800">Dhito</div>
+            <div style="font-size:12px;color:var(--gray)">0xDh1t0...f3a2</div>
+          </div>
+        </div>
+        <div style="margin-bottom:20px">
+          <div style="font-size:13px;color:var(--gray);margin-bottom:8px">Winning payout</div>
+          <div style="font-size:48px;font-weight:900;color:var(--green)">0.1633 ETH</div>
+          <div style="font-size:14px;color:var(--green);margin-top:4px">+0.0633 ETH profit (+63.3% ROI)</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;text-align:left">
+          <div class="tx-card">
+            <span style="font-size:12px;color:var(--gray)">Tx Hash</span>
+            <span class="tx-hash">0xc9d2...a7f3</span>
+          </div>
+          <div class="tx-card">
+            <span style="font-size:12px;color:var(--gray)">Function</span>
+            <span style="font-size:12px;font-weight:600;color:var(--purple)">claim(0)</span>
+          </div>
+          <div class="tx-card" style="background:rgba(74,222,128,.05);border-color:rgba(74,222,128,.3)">
+            <span style="font-size:12px;color:var(--green)">New Balance</span>
+            <span style="font-size:13px;font-weight:800;color:var(--green)">0.2133 ETH</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- MARIA LOSS -->
+      <div class="loss-card">
+        <div style="font-size:56px;margin-bottom:16px">😔</div>
+        <div class="user-row" style="justify-content:center;margin-bottom:20px">
+          <div class="avatar avatar-maria" style="width:52px;height:52px;font-size:22px">M</div>
+          <div>
+            <div style="font-size:18px;font-weight:800">Maria</div>
+            <div style="font-size:12px;color:var(--gray)">0xMar1a...b8f1</div>
+          </div>
+        </div>
+        <div style="margin-bottom:20px">
+          <div style="font-size:13px;color:var(--gray);margin-bottom:8px">Better luck next time</div>
+          <div style="font-size:48px;font-weight:900;color:var(--red)">−0.08 ETH</div>
+          <div style="font-size:14px;color:var(--gray);margin-top:4px">Bet lost · Oracle was deterministic, no disputes possible</div>
+        </div>
+        <div style="background:rgba(248,113,113,.05);border:1px solid rgba(248,113,113,.2);border-radius:12px;padding:16px;text-align:left">
+          <div style="font-size:12px;color:var(--gray);margin-bottom:8px">Why no dispute?</div>
+          <div style="font-size:12px;color:var(--white)">Chainlink Data Feed returns a <strong style="color:var(--yellow)">verifiable on-chain price</strong>. It's not a human opinion — it's cryptographically signed data. <strong style="color:var(--red)">No dispute fund was burned.</strong></div>
+          <div style="margin-top:10px;font-size:11px;color:var(--gray2)">This is the difference between OmniOracle & Polymarket. The oracle matches the question.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════ SCENE 9: FINAL ══════ -->
+  <div class="scene" id="scene-9">
+    <div class="final-hero">
+      <div class="intro-badge" style="margin-bottom:20px">
+        <span>✅</span> Full lifecycle complete · Base Sepolia
+      </div>
+      <div class="intro-logo" style="font-size:56px;margin-bottom:12px">OmniOracle</div>
+      <p style="font-size:16px;color:var(--gray);max-width:560px;margin:0 auto 40px">
+        From <strong style="color:var(--white)">wallet connect</strong> to <strong style="color:var(--white)">claiming profit</strong> — the entire lifecycle orchestrated by <strong style="color:var(--blue)">Chainlink CRE</strong> with 8 services.
+      </p>
+
+      <div class="grid4" style="max-width:800px;margin:0 auto 40px">
+        <div class="stat-card">
+          <div class="stat-val" style="color:var(--purple)">8</div>
+          <div class="stat-lbl">Chainlink Services</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" style="color:var(--cyan)">5</div>
+          <div class="stat-lbl">Oracle Pipelines</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" style="color:var(--green)">46</div>
+          <div class="stat-lbl">Tests Passing</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" style="color:var(--yellow)">3</div>
+          <div class="stat-lbl">CRE Workflows</div>
+        </div>
+      </div>
+
+      <div class="services-final" style="max-width:700px;margin:0 auto 32px">
+        <span class="service-pill" style="color:var(--blue)"><span class="check-icon">✓</span> CRE</span>
+        <span class="service-pill" style="color:var(--green)"><span class="check-icon">✓</span> x402</span>
+        <span class="service-pill" style="color:var(--yellow)"><span class="check-icon">✓</span> Data Feeds</span>
+        <span class="service-pill" style="color:var(--orange)"><span class="check-icon">✓</span> Data Streams</span>
+        <span class="service-pill" style="color:var(--pink)"><span class="check-icon">✓</span> Functions</span>
+        <span class="service-pill" style="color:var(--cyan)"><span class="check-icon">✓</span> CCIP</span>
+        <span class="service-pill" style="color:var(--purple)"><span class="check-icon">✓</span> VRF v2.5</span>
+        <span class="service-pill" style="color:var(--red)"><span class="check-icon">✓</span> Automation</span>
+      </div>
+
+      <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-bottom:40px">
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 24px;text-align:center">
+          <div style="font-size:11px;color:var(--gray);margin-bottom:4px">Live Demo</div>
+          <div style="font-size:14px;font-weight:700;color:var(--cyan)">omnioracle.vercel.app</div>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 24px;text-align:center">
+          <div style="font-size:11px;color:var(--gray);margin-bottom:4px">MarketFactory</div>
+          <div style="font-size:12px;font-weight:600;color:var(--purple);font-family:'JetBrains Mono',monospace">0xd3A8...02c2</div>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 24px;text-align:center">
+          <div style="font-size:11px;color:var(--gray);margin-bottom:4px">GitHub</div>
+          <div style="font-size:14px;font-weight:700;color:var(--white)">yt2025id-lab/omnioracle</div>
+        </div>
+      </div>
+
+      <div style="font-size:32px;font-weight:900;background:linear-gradient(135deg,var(--purple),var(--orange),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">
+        "Zapier for Prediction Market Oracles"
+      </div>
+      <div style="font-size:13px;color:var(--gray2);margin-top:8px">Chainlink Convergence Hackathon 2026 · Prediction Markets Track</div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- CONTROLS -->
+<div class="controls">
+  <button class="ctrl-btn" onclick="prevScene()" title="Previous">‹</button>
+  <div class="step-dots" id="ctrlDots" style="gap:4px"></div>
+  <button class="ctrl-auto" id="autoBtn" onclick="toggleAuto()">
+    <span id="autoIcon">▶</span> Auto Play
+  </button>
+  <span class="ctrl-step" id="ctrlStep">1/10</span>
+  <button class="ctrl-btn" onclick="nextScene()" title="Next">›</button>
+</div>
+
+<script>
+const SCENES = [
+  { label: "Introduction",         duration: 6000  },
+  { label: "Dhito Connects Wallet",duration: 7000  },
+  { label: "Creating Market",      duration: 9000  },
+  { label: "Market Live",          duration: 6000  },
+  { label: "Placing Bets",         duration: 7000  },
+  { label: "Deadline & Automation",duration: 6000  },
+  { label: "Oracle Resolution",    duration: 8000  },
+  { label: "Market Resolved",      duration: 6000  },
+  { label: "Claiming Winnings",    duration: 7000  },
+  { label: "Final",                duration: 12000 },
+];
+
+let current = 0;
+let autoPlay = false;
+let timer = null;
+
+// Init dots
+function initDots() {
+  const pd = document.getElementById('stepDots');
+  const cd = document.getElementById('ctrlDots');
+  pd.innerHTML = ''; cd.innerHTML = '';
+  SCENES.forEach((_, i) => {
+    const d1 = document.createElement('div');
+    d1.className = 'step-dot' + (i < current ? ' done' : i === current ? ' active' : '');
+    pd.appendChild(d1);
+    const d2 = document.createElement('div');
+    d2.className = 'step-dot' + (i < current ? ' done' : i === current ? ' active' : '');
+    d2.style.cssText = 'width:6px;height:6px;border-radius:50%;background:' + (i<current?'var(--purple)':i===current?'var(--cyan)':'var(--border2)') + ';transition:all .3s';
+    cd.appendChild(d2);
+  });
+}
+
+function showScene(n) {
+  document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
+  document.getElementById('scene-' + n).classList.add('active');
+  document.getElementById('progressFill').style.width = ((n / (SCENES.length-1)) * 100) + '%';
+  document.getElementById('stepLabel').textContent = SCENES[n].label;
+  document.getElementById('stepCount').textContent = (n+1) + ' / ' + SCENES.length;
+  document.getElementById('ctrlStep').textContent = (n+1) + '/' + SCENES.length;
+  initDots();
+  runSceneAnimations(n);
+}
+
+function nextScene() {
+  if (current < SCENES.length - 1) {
+    current++;
+    showScene(current);
+    if (autoPlay) scheduleNext();
+  } else {
+    stopAuto();
+  }
+}
+
+function prevScene() {
+  if (current > 0) { current--; showScene(current); }
+  if (autoPlay) scheduleNext();
+}
+
+function toggleAuto() {
+  autoPlay = !autoPlay;
+  const btn = document.getElementById('autoBtn');
+  const icon = document.getElementById('autoIcon');
+  if (autoPlay) {
+    btn.classList.remove('paused');
+    btn.style.background = 'var(--purple)';
+    icon.textContent = '⏸';
+    btn.querySelector('span').nextSibling.textContent = ' Pause';
+    scheduleNext();
+  } else {
+    stopAuto();
+  }
+}
+
+function stopAuto() {
+  autoPlay = false;
+  clearTimeout(timer);
+  const btn = document.getElementById('autoBtn');
+  const icon = document.getElementById('autoIcon');
+  btn.style.background = '';
+  btn.classList.add('paused');
+  icon.textContent = '▶';
+}
+
+function scheduleNext() {
+  clearTimeout(timer);
+  if (!autoPlay) return;
+  timer = setTimeout(() => {
+    if (autoPlay) nextScene();
+  }, SCENES[current].duration);
+}
+
+// Block number ticker
+setInterval(() => {
+  const el = document.getElementById('blockNum');
+  if (el) el.textContent = (18429031 + Math.floor(Date.now()/12000)).toLocaleString();
+}, 3000);
+
+// Scene-specific animations
+function runSceneAnimations(n) {
+  if (n === 1) animateScene1();
+  if (n === 2) animateScene2();
+  if (n === 6) animateScene6();
+}
+
+function animateScene1() {
+  // nothing auto — user clicks Connect
+}
+
+function connectDhito() {
+  const btn = document.getElementById('btnConnectDhito');
+  btn.textContent = 'Connecting...';
+  btn.disabled = true;
+  setTimeout(() => {
+    document.getElementById('dhito-wallet-card').style.display = 'flex';
+    document.getElementById('nav-wallet').textContent = '0xDh1t0...f3a2';
+    showNotif('✅', 'Dhito Connected!', 'MetaMask · Base Sepolia · 0.1500 ETH');
+    if (autoPlay) clearTimeout(timer), timer = setTimeout(() => { if(autoPlay) nextScene(); }, 3000);
+  }, 1200);
+}
+
+function createMarket() {
+  // Animate CRE flow steps
+  const steps = ['cre-step-1','cre-step-2','cre-step-3'];
+  const log = document.getElementById('log-create');
+
+  setTimeout(() => {
+    document.getElementById('gemini-status').textContent = '✅ Valid — clear binary question, verifiable';
+    document.getElementById('cre-step-1').className = 'flow-dot done';
+    document.getElementById('cre-step-1').textContent = '✓';
+    document.getElementById('cre-step-2').className = 'flow-dot active';
+    addLog(log, 'GEMINI', 'log-purple', '✅ Question valid · category=CRYPTO · pipeline=PRICE_FEED');
+  }, 800);
+  setTimeout(() => {
+    document.getElementById('cre-step-2').className = 'flow-dot done';
+    document.getElementById('cre-step-2').textContent = '✓';
+    document.getElementById('cre-step-3').className = 'flow-dot active';
+    addLog(log, 'CRE', 'log-blue', 'Encoding report 0x00 · Signing with CRE key');
+    addLog(log, 'VRF', 'log-purple', 'VRF request sent · selecting featured market');
+  }, 1800);
+  setTimeout(() => {
+    document.getElementById('cre-step-3').className = 'flow-dot done';
+    document.getElementById('cre-step-3').textContent = '✓';
+    addLog(log, 'ON-CHAIN', 'log-green', '✅ MarketFactory.onReport(0x00) confirmed · marketId=0');
+    addLog(log, 'VRF', 'log-purple', 'VRF fulfilled · market #0 is now Featured ⭐');
+    showNotif('🚀', 'Market Created!', 'Will ETH exceed $5,000? · Price Feed pipeline');
+    if (autoPlay) clearTimeout(timer), timer = setTimeout(() => { if(autoPlay) nextScene(); }, 3500);
+  }, 3000);
+}
+
+function addLog(el, src, cls, msg) {
+  const now = new Date();
+  const ts = now.toTimeString().slice(0,8);
+  const line = document.createElement('div');
+  line.className = 'log-line';
+  line.innerHTML = `<span class="log-ts">[${ts}]</span> <span class="${cls}">${src}</span> ${msg}`;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
+
+function animateScene6() {
+  // Animate price counter
+  const target = 5247;
+  let cur = 0;
+  const priceEl = document.getElementById('priceCounter');
+  const interval = setInterval(() => {
+    cur += 73;
+    if (cur >= target) { cur = target; clearInterval(interval); }
+    priceEl.textContent = '$' + cur.toLocaleString('en', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+  }, 30);
+
+  setTimeout(() => {
+    document.getElementById('priceResult').style.display = 'block';
+    document.getElementById('resolve-step-2').className = 'flow-dot done';
+    document.getElementById('resolve-step-2').textContent = '✓';
+    document.getElementById('feed-status').textContent = '✅ $5,247.00 read · above $5,000 threshold → YES';
+    document.getElementById('resolve-step-3').className = 'flow-dot done';
+    document.getElementById('resolve-step-3').textContent = '✓';
+  }, 2500);
+
+  setTimeout(() => {
+    document.getElementById('resolve-step-4').className = 'flow-dot done';
+    document.getElementById('resolve-step-4').textContent = '✓';
+    showNotif('⚡', 'Oracle Resolved!', 'ETH/USD = $5,247 · YES wins · 100% confidence');
+    if (autoPlay) clearTimeout(timer), timer = setTimeout(() => { if(autoPlay) nextScene(); }, 3000);
+  }, 4000);
+}
+
+// Notification
+function showNotif(icon, title, sub) {
+  document.getElementById('notif-icon').textContent = icon;
+  document.getElementById('notif-title').textContent = title;
+  document.getElementById('notif-sub').textContent = sub;
+  const n = document.getElementById('notif');
+  n.classList.add('show');
+  setTimeout(() => n.classList.remove('show'), 4000);
+}
+
+// Keyboard
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextScene(); }
+  if (e.key === 'ArrowLeft') prevScene();
+  if (e.key === 'Enter') toggleAuto();
+});
+
+// Init
+initDots();
+
+// Auto-start intro after 1s
+setTimeout(() => {
+  showNotif('🎬', 'Demo Started', 'Press Space / → to advance, Enter to auto-play');
+}, 1000);
+</script>
+</body>
+</html>
