@@ -7,7 +7,7 @@
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-omnioracle.vercel.app-6366f1?style=for-the-badge&logo=vercel)](https://omnioracle.vercel.app)
 [![Built for Chainlink](https://img.shields.io/badge/Built%20for-Chainlink%20Convergence%20Hackathon-375BD2?style=for-the-badge&logo=chainlink)](https://chain.link/hackathon)
 [![Network](https://img.shields.io/badge/Network-Base%20Sepolia-0052FF?style=for-the-badge&logo=coinbase)](https://sepolia.basescan.org)
-[![Tests](https://img.shields.io/badge/Tests-48%20Passing-22c55e?style=for-the-badge&logo=foundry)](contracts/test)
+[![Tests](https://img.shields.io/badge/Tests-52%20Passing-22c55e?style=for-the-badge&logo=foundry)](contracts/test)
 [![License](https://img.shields.io/badge/License-MIT-gray?style=for-the-badge)](LICENSE)
 
 **"Zapier for prediction market oracles"** — any user creates a market and selects the right Chainlink oracle pipeline for resolution. Powered by **8 Chainlink services** working in concert.
@@ -86,7 +86,7 @@ WHO BENEFITS
 | 4 | **Data Streams** | `oracle-resolver` CRE workflow | Sub-second real-time price data for time-critical markets |
 | 5 | **Functions** | `OmniResolver.sol` | Custom JS execution via Chainlink DON for API-based markets (sports, weather) |
 | 6 | **CCIP** | `CrossChainRegistry.sol` | `IRouterClient.ccipSend()` mirrors markets to any chain; `ccipReceive()` accepts incoming messages |
-| 7 | **VRF v2.5** | `MarketFactory.sol` | Tamper-proof randomness for featured market selection and resolution tiebreakers |
+| 7 | **VRF v2.5** | `MarketFactory.sol` | `requestFeaturedMarket()` calls `IVRFCoordinatorV2Plus.requestRandomWords()`; `fulfillRandomWords()` callback selects winner |
 | 8 | **Automation** | `AutoResolver.sol` | Triggers resolution automatically when market deadline expires |
 
 ### How CRE Unifies It All
@@ -132,7 +132,11 @@ requestResolution(marketId)     → emits ResolutionRequested for CRE EVM Log tr
 onReport(bytes report)          → CRE Forwarder callback (0x00=create, 0x01=resolve)
 claim(marketId)                 → proportional payout, 2% platform fee
 disputeResolution(marketId)     payable  (0.05 ETH bond)
-setFeaturedMarket(marketId)     → VRF-powered random selection
+
+// Chainlink VRF v2.5
+setVRFConfig(coordinator, subscriptionId, keyHash)  → configure VRF coordinator
+requestFeaturedMarket(uint256[] candidates)          → calls IVRFCoordinatorV2Plus.requestRandomWords()
+fulfillRandomWords(requestId, randomWords)           → VRF callback: selects featured market by randomWords[0] % len
 ```
 
 ### OraclePipeline.sol
@@ -225,11 +229,11 @@ cd contracts && forge test -vv
 ```
 
 ```
-Running 48 tests across 2 contracts:
+Running 52 tests across 2 contracts:
   MarketFactory.t.sol  [30 tests]  ..............................  PASS
-  OmniResolver.t.sol   [18 tests]  ..................            PASS
+  OmniResolver.t.sol   [22 tests]  ......................          PASS
 
-Test result: ok. 48 passed; 0 failed; finished in 178.90ms
+Test result: ok. 52 passed; 0 failed; finished in 150.82ms
 ```
 
 ---

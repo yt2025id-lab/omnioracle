@@ -6,6 +6,26 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./interfaces/IMarketFactory.sol";
 import "./OraclePipeline.sol";
 
+// ---------------------------------------------------------------------------
+// Inline Chainlink VRF v2.5 interfaces — compatible with VRFCoordinatorV2_5
+// Source: https://github.com/smartcontractkit/chainlink/tree/develop/contracts/src/v0.8/vrf
+// Base Sepolia coordinator: 0x5C210eF41CD1a72de73bF76eC39637bB0d3d7BEE
+// ---------------------------------------------------------------------------
+interface IVRFCoordinatorV2Plus {
+    struct RandomWordsRequest {
+        bytes32 keyHash;
+        uint256 subId;
+        uint16 requestConfirmations;
+        uint32 callbackGasLimit;
+        uint32 numWords;
+        bytes extraArgs; // abi.encode(VRFV2PlusClient.ExtraArgsV1{nativePayment: false})
+    }
+
+    function requestRandomWords(RandomWordsRequest calldata req) external returns (uint256 requestId);
+}
+
+// ---------------------------------------------------------------------------
+
 /// @title MarketFactory — Permissionless prediction market creation with composable oracle pipelines
 /// @notice Anyone can create a market with a custom oracle pipeline. CRE resolves via onReport.
 contract MarketFactory is IMarketFactory, Ownable, ReentrancyGuard {
@@ -23,6 +43,22 @@ contract MarketFactory is IMarketFactory, Ownable, ReentrancyGuard {
     address public creForwarder;
     address public omniResolver;
     OraclePipeline public oraclePipeline;
+
+    // ---------------------------------------------------------------------------
+    // Chainlink VRF v2.5 — featured market selection
+    // ---------------------------------------------------------------------------
+    IVRFCoordinatorV2Plus public vrfCoordinator;
+    uint256 public vrfSubscriptionId;
+    bytes32 public vrfKeyHash; // Base Sepolia: 0x9e9e46...
+    uint16 public constant VRF_REQUEST_CONFIRMATIONS = 3;
+    uint32 public constant VRF_CALLBACK_GAS_LIMIT = 100_000;
+
+    // requestId => candidate market IDs (set before randomness arrives)
+    mapping(uint256 => uint256[]) private vrfPendingCandidates;
+
+    event FeaturedMarketRequested(uint256 indexed requestId, uint256[] candidates);
+    event FeaturedMarketSelected(uint256 indexed requestId, uint256 indexed marketId, uint256 randomness);
+    // ---------------------------------------------------------------------------
 
     mapping(uint256 => Market) public markets;
     mapping(uint256 => mapping(address => uint256)) public userYesBets;
@@ -48,6 +84,53 @@ contract MarketFactory is IMarketFactory, Ownable, ReentrancyGuard {
 
     function setOmniResolver(address _omniResolver) external onlyOwner {
         omniResolver = _omniResolver;
+    }
+
+    /// @notice Configure Chainlink VRF v2.5 for featured market selection
+    function setVRFConfig(
+        address _coordinator,
+        uint256 _subscriptionId,
+        bytes32 _keyHash
+    ) external onlyOwner {
+        vrfCoordinator = IVRFCoordinatorV2Plus(_coordinator);
+        vrfSubscriptionId = _subscriptionId;
+        vrfKeyHash = _keyHash;
+    }
+
+    /// @notice Request VRF randomness to select a featured market from candidates
+    /// @param candidates Array of open market IDs to choose from
+    /// @dev Caller must fund vrfSubscriptionId with LINK before calling
+    function requestFeaturedMarket(uint256[] calldata candidates) external onlyAuthorized returns (uint256 requestId) {
+        require(address(vrfCoordinator) != address(0), "VRF not configured");
+        require(candidates.length > 0, "No candidates");
+
+        requestId = vrfCoordinator.requestRandomWords(
+            IVRFCoordinatorV2Plus.RandomWordsRequest({
+                keyHash: vrfKeyHash,
+                subId: vrfSubscriptionId,
+                requestConfirmations: VRF_REQUEST_CONFIRMATIONS,
+                callbackGasLimit: VRF_CALLBACK_GAS_LIMIT,
+                numWords: 1,
+                extraArgs: "" // pay with LINK (not native)
+            })
+        );
+
+        vrfPendingCandidates[requestId] = candidates;
+        emit FeaturedMarketRequested(requestId, candidates);
+    }
+
+    /// @notice VRF Coordinator callback — selects featured market from random word
+    /// @dev Called by VRFCoordinatorV2_5 after randomness is fulfilled on-chain
+    function fulfillRandomWords(uint256 requestId, uint256[] calldata randomWords) external {
+        require(msg.sender == address(vrfCoordinator), "Only VRF Coordinator");
+        uint256[] memory candidates = vrfPendingCandidates[requestId];
+        require(candidates.length > 0, "Unknown request");
+
+        uint256 selected = candidates[randomWords[0] % candidates.length];
+        featuredMarketId = selected;
+        delete vrfPendingCandidates[requestId];
+
+        emit FeaturedMarketSelected(requestId, selected, randomWords[0]);
     }
 
     /// @notice Create a new prediction market with a custom oracle pipeline

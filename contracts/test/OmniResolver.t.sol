@@ -9,6 +9,24 @@ import "../src/CrossChainRegistry.sol";
 import "../src/AutoResolver.sol";
 import "../src/interfaces/IMarketFactory.sol";
 
+/// @dev Mock VRF Coordinator for testing — returns incrementing requestId
+contract MockVRFCoordinator {
+    uint256 private _nextRequestId = 1;
+
+    struct RandomWordsRequest {
+        bytes32 keyHash;
+        uint256 subId;
+        uint16 requestConfirmations;
+        uint32 callbackGasLimit;
+        uint32 numWords;
+        bytes extraArgs;
+    }
+
+    function requestRandomWords(RandomWordsRequest calldata) external returns (uint256 requestId) {
+        return _nextRequestId++;
+    }
+}
+
 /// @dev Mock CCIP Router for testing — returns zero fee, emits nothing
 contract MockCCIPRouter {
     bytes32 public constant MOCK_MESSAGE_ID = bytes32(uint256(0xCC10CC10));
@@ -244,6 +262,64 @@ contract OmniResolverTest is Test {
         uint256 id = _createMarket();
         uint256 fee = ccRegistry.estimateFee(id, 16015286601757825753, destReceiver);
         assertEq(fee, 0); // MockCCIPRouter returns 0 fee
+    }
+
+    // === VRF v2.5 — Featured Market ===
+
+    function testVRFConfigSet() public {
+        address mockCoordinator = address(0xAF01);
+        bytes32 mockKeyHash = bytes32(uint256(0xABCD));
+        uint256 subId = 42;
+
+        factory.setVRFConfig(mockCoordinator, subId, mockKeyHash);
+
+        assertEq(address(factory.vrfCoordinator()), mockCoordinator);
+        assertEq(factory.vrfSubscriptionId(), subId);
+        assertEq(factory.vrfKeyHash(), mockKeyHash);
+    }
+
+    function testVRFConfigOnlyOwner() public {
+        vm.prank(user1);
+        vm.expectRevert();
+        factory.setVRFConfig(address(0x1), 1, bytes32(0));
+    }
+
+    function testFulfillRandomWordsSelectsCorrectly() public {
+        // Create 3 markets, use VRF to pick featured
+        uint256 id0 = _createMarket();
+        uint256 id1 = _createMarket();
+        uint256 id2 = _createMarket();
+
+        // Deploy mock VRF coordinator
+        MockVRFCoordinator mockVRF = new MockVRFCoordinator();
+        factory.setVRFConfig(address(mockVRF), 1, bytes32(uint256(0xDEAD)));
+
+        uint256[] memory candidates = new uint256[](3);
+        candidates[0] = id0;
+        candidates[1] = id1;
+        candidates[2] = id2;
+
+        uint256 requestId = factory.requestFeaturedMarket(candidates);
+
+        // Simulate VRF fulfillment: randomness=5 → index = 5 % 3 = 2 → id2
+        uint256[] memory randomWords = new uint256[](1);
+        randomWords[0] = 5;
+        vm.prank(address(mockVRF));
+        factory.fulfillRandomWords(requestId, randomWords);
+
+        assertEq(factory.featuredMarketId(), id2);
+    }
+
+    function testFulfillRandomWordsOnlyCoordinator() public {
+        MockVRFCoordinator mockVRF = new MockVRFCoordinator();
+        factory.setVRFConfig(address(mockVRF), 1, bytes32(0));
+
+        uint256[] memory rw = new uint256[](1);
+        rw[0] = 0;
+
+        vm.prank(user1);
+        vm.expectRevert("Only VRF Coordinator");
+        factory.fulfillRandomWords(0, rw);
     }
 
     // === AutoResolver ===
