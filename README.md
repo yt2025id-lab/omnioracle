@@ -7,7 +7,7 @@
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-omnioracle.vercel.app-6366f1?style=for-the-badge&logo=vercel)](https://omnioracle.vercel.app)
 [![Built for Chainlink](https://img.shields.io/badge/Built%20for-Chainlink%20Convergence%20Hackathon-375BD2?style=for-the-badge&logo=chainlink)](https://chain.link/hackathon)
 [![Network](https://img.shields.io/badge/Network-Base%20Sepolia-0052FF?style=for-the-badge&logo=coinbase)](https://sepolia.basescan.org)
-[![Tests](https://img.shields.io/badge/Tests-46%20Passing-22c55e?style=for-the-badge&logo=foundry)](contracts/test)
+[![Tests](https://img.shields.io/badge/Tests-48%20Passing-22c55e?style=for-the-badge&logo=foundry)](contracts/test)
 [![License](https://img.shields.io/badge/License-MIT-gray?style=for-the-badge)](LICENSE)
 
 **"Zapier for prediction market oracles"** — any user creates a market and selects the right Chainlink oracle pipeline for resolution. Powered by **8 Chainlink services** working in concert.
@@ -85,7 +85,7 @@ WHO BENEFITS
 | 3 | **Data Feeds** | `oracle-resolver` CRE workflow | Price Feed pipeline: reads ETH/USD on-chain and checks against creator-set threshold |
 | 4 | **Data Streams** | `oracle-resolver` CRE workflow | Sub-second real-time price data for time-critical markets |
 | 5 | **Functions** | `OmniResolver.sol` | Custom JS execution via Chainlink DON for API-based markets (sports, weather) |
-| 6 | **CCIP** | `CrossChainRegistry.sol` | Mirrors markets across chains so bettors on any network can participate |
+| 6 | **CCIP** | `CrossChainRegistry.sol` | `IRouterClient.ccipSend()` mirrors markets to any chain; `ccipReceive()` accepts incoming messages |
 | 7 | **VRF v2.5** | `MarketFactory.sol` | Tamper-proof randomness for featured market selection and resolution tiebreakers |
 | 8 | **Automation** | `AutoResolver.sol` | Triggers resolution automatically when market deadline expires |
 
@@ -148,10 +148,19 @@ requestResolution(marketId)           → emits ResolutionTriggered (CRE EVM Log
 onReport(bytes)                       → receives pipeline results, forwards to MarketFactory
 ```
 
-### CrossChainRegistry.sol
+### CrossChainRegistry.sol — Chainlink CCIP
 ```
-mirrorMarket(marketId, destChainSelector)   → CCIP message to destination chain
-receiveCrossChainMarket(...)                → accepts mirrored market data from CCIP
+mirrorMarket(marketId, destChainSelector, destReceiver)  payable
+  → encodes market metadata, calls IRouterClient.ccipSend() with native fee payment
+  → emits MarketMirrored(marketId, destChainSelector, ccipMessageId)
+
+ccipReceive(Client.Any2EVMMessage calldata message)
+  → implements IAny2EVMMessageReceiver, only callable by ccipRouter
+  → decodes payload, stores incoming market, replay-protection via messageId map
+  → emits CrossChainMarketReceived(marketId, sourceChainSelector, messageId)
+
+estimateFee(marketId, destChainSelector, destReceiver) → uint256
+  → calls IRouterClient.getFee() so callers can prefund before mirroring
 ```
 
 ### AutoResolver.sol — Chainlink Automation Compatible
@@ -216,11 +225,11 @@ cd contracts && forge test -vv
 ```
 
 ```
-Running 46 tests across 2 contracts:
-  MarketFactory.t.sol  [30 tests]  ............................  PASS
-  OmniResolver.t.sol   [16 tests]  ................            PASS
+Running 48 tests across 2 contracts:
+  MarketFactory.t.sol  [30 tests]  ..............................  PASS
+  OmniResolver.t.sol   [18 tests]  ..................            PASS
 
-Test result: ok. 46 passed; 0 failed; finished in 2.34s
+Test result: ok. 48 passed; 0 failed; finished in 178.90ms
 ```
 
 ---
@@ -308,7 +317,7 @@ omnioracle/
 ### 1. Clone & Configure
 
 ```bash
-git clone https://github.com/your-org/omnioracle
+git clone https://github.com/Ozan-OnChain/omnioracle
 cd omnioracle
 cp .env.example .env
 # Fill in PRIVATE_KEY, BASE_SEPOLIA_RPC_URL, GEMINI_API_KEY

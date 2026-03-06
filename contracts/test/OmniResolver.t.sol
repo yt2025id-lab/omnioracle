@@ -9,17 +9,31 @@ import "../src/CrossChainRegistry.sol";
 import "../src/AutoResolver.sol";
 import "../src/interfaces/IMarketFactory.sol";
 
+/// @dev Mock CCIP Router for testing — returns zero fee, emits nothing
+contract MockCCIPRouter {
+    bytes32 public constant MOCK_MESSAGE_ID = bytes32(uint256(0xCC10CC10));
+
+    function getFee(uint64, Client.EVM2AnyMessage calldata) external pure returns (uint256) {
+        return 0;
+    }
+
+    function ccipSend(uint64, Client.EVM2AnyMessage calldata) external payable returns (bytes32) {
+        return MOCK_MESSAGE_ID;
+    }
+}
+
 contract OmniResolverTest is Test {
     MarketFactory public factory;
     OraclePipeline public pipeline;
     OmniResolver public resolver;
     CrossChainRegistry public ccRegistry;
     AutoResolver public autoResolver;
+    MockCCIPRouter public mockRouter;
 
     address owner = address(this);
     address creForwarder = address(0xC4E);
-    address ccipRouter = address(0xCC10);
     address user1 = address(0x1001);
+    address destReceiver = address(0xBEEF);
 
     function setUp() public {
         pipeline = new OraclePipeline();
@@ -29,11 +43,13 @@ contract OmniResolverTest is Test {
         resolver = new OmniResolver(address(factory), address(pipeline), creForwarder);
         factory.setOmniResolver(address(resolver));
 
-        ccRegistry = new CrossChainRegistry(address(factory), ccipRouter);
+        mockRouter = new MockCCIPRouter();
+        ccRegistry = new CrossChainRegistry(address(factory), address(mockRouter));
         autoResolver = new AutoResolver(address(factory));
 
         vm.deal(user1, 10 ether);
         vm.deal(creForwarder, 1 ether);
+        vm.deal(address(this), 1 ether);
     }
 
     function _defaultConfig() internal pure returns (IMarketFactory.PipelineConfig memory) {
@@ -147,13 +163,14 @@ contract OmniResolverTest is Test {
         pipeline.setPipelineConfig(0, _defaultConfig());
     }
 
-    // === CrossChainRegistry ===
+    // === CrossChainRegistry (Chainlink CCIP) ===
 
     function testMirrorMarket() public {
         uint256 id = _createMarket();
         uint64 ethSepoliaSelector = 16015286601757825753;
 
-        ccRegistry.mirrorMarket(id, ethSepoliaSelector);
+        // mirrorMarket now calls real CCIP via MockCCIPRouter (fee=0)
+        ccRegistry.mirrorMarket{value: 0}(id, ethSepoliaSelector, destReceiver);
 
         assertTrue(ccRegistry.isMirrored(id, ethSepoliaSelector));
         assertEq(ccRegistry.getMirroredCount(ethSepoliaSelector), 1);
@@ -164,34 +181,69 @@ contract OmniResolverTest is Test {
         uint256 id = _createMarket();
         uint64 selector = 16015286601757825753;
 
-        ccRegistry.mirrorMarket(id, selector);
+        ccRegistry.mirrorMarket{value: 0}(id, selector, destReceiver);
 
-        vm.expectRevert("Already mirrored");
-        ccRegistry.mirrorMarket(id, selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(CrossChainRegistry.MarketAlreadyMirrored.selector, id, selector)
+        );
+        ccRegistry.mirrorMarket{value: 0}(id, selector, destReceiver);
     }
 
     function testMirrorMarketNotOpen() public {
         uint256 id = _createMarket();
         factory.resolveMarket(id, IMarketFactory.Outcome.YES, 9000);
 
-        vm.expectRevert("Not open");
-        ccRegistry.mirrorMarket(id, 16015286601757825753);
+        vm.expectRevert("Market not open");
+        ccRegistry.mirrorMarket{value: 0}(id, 16015286601757825753, destReceiver);
     }
 
-    function testReceiveCrossChainMarket() public {
-        vm.prank(ccipRouter);
-        ccRegistry.receiveCrossChainMarket(
-            42,
-            16015286601757825753,
-            "Cross-chain question?",
-            1,
-            block.timestamp + 3 days
-        );
+    function testCCIPReceive() public {
+        uint256 marketId = 42;
+        uint64 sourceChain = 16015286601757825753;
+        string memory question = "Cross-chain question?";
+        uint8 pipelineType = 1;
+        uint256 deadline = block.timestamp + 3 days;
+
+        // Build the CCIP Any2EVMMessage that the router would deliver
+        Client.Any2EVMMessage memory message = Client.Any2EVMMessage({
+            messageId: bytes32(uint256(0xDEAD)),
+            sourceChainSelector: sourceChain,
+            sender: abi.encode(destReceiver),
+            data: abi.encode(marketId, question, pipelineType, deadline),
+            tokenAmounts: new Client.EVMTokenAmount[](0)
+        });
+
+        // Only the CCIP router can call ccipReceive
+        vm.prank(address(mockRouter));
+        ccRegistry.ccipReceive(message);
 
         assertEq(ccRegistry.getIncomingMarketsCount(), 1);
         CrossChainRegistry.MirroredMarket memory m = ccRegistry.getIncomingMarket(0);
-        assertEq(m.marketId, 42);
+        assertEq(m.marketId, marketId);
+        assertEq(m.sourceChainSelector, sourceChain);
         assertTrue(m.isActive);
+    }
+
+    function testCCIPReceiveOnlyRouter() public {
+        Client.Any2EVMMessage memory message = Client.Any2EVMMessage({
+            messageId: bytes32(uint256(0xDEAD)),
+            sourceChainSelector: 1,
+            sender: abi.encode(destReceiver),
+            data: abi.encode(uint256(1), "test?", uint8(0), block.timestamp + 1 days),
+            tokenAmounts: new Client.EVMTokenAmount[](0)
+        });
+
+        vm.prank(user1);
+        vm.expectRevert(
+            abi.encodeWithSelector(CrossChainRegistry.NotCCIPRouter.selector, user1)
+        );
+        ccRegistry.ccipReceive(message);
+    }
+
+    function testEstimateFee() public {
+        uint256 id = _createMarket();
+        uint256 fee = ccRegistry.estimateFee(id, 16015286601757825753, destReceiver);
+        assertEq(fee, 0); // MockCCIPRouter returns 0 fee
     }
 
     // === AutoResolver ===
