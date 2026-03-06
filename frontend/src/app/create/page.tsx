@@ -1,267 +1,197 @@
 "use client";
-
 import { useState } from "react";
 import { useWriteContract, useAccount } from "wagmi";
 import { parseEther } from "viem";
 import { CONTRACTS, FACTORY_ABI } from "@/lib/contracts";
 
 const PIPELINE_OPTIONS = [
-  {
-    type: 0, label: "Price Feed", color: "border-yellow-500",
-    desc: "Resolve using Chainlink Data Feeds. Best for crypto price threshold markets.",
-    fields: ["priceFeedAddress", "priceThreshold", "isAbove"],
-  },
-  {
-    type: 1, label: "Data Stream", color: "border-orange-500",
-    desc: "Real-time sub-second price resolution. For time-sensitive markets.",
-    fields: ["dataStreamId", "priceThreshold", "isAbove"],
-  },
-  {
-    type: 2, label: "Functions API", color: "border-pink-500",
-    desc: "Custom JavaScript for API-based resolution (sports, weather, elections).",
-    fields: ["functionsScript"],
-  },
-  {
-    type: 3, label: "AI Grounded", color: "border-purple-500",
-    desc: "Gemini AI with search grounding for general world event verification.",
-    fields: [],
-  },
-  {
-    type: 4, label: "Composite", color: "border-cyan-500",
-    desc: "Multi-source pipeline requiring N-of-M agreement (Data Feeds + AI).",
-    fields: ["requiredAgreement", "priceFeedAddress"],
-  },
+  { type:0, label:"Price Feed",    color:"var(--accent-blue)", icon:"◐", tag:"Deterministic", desc:"Resolve using Chainlink Data Feeds. Best for crypto price threshold markets.", fields:["priceFeedAddress","priceThreshold","isAbove"] },
+  { type:1, label:"Data Stream",   color:"#ff6b2b", icon:"⚡", tag:"Real-time",     desc:"Real-time sub-second price resolution. For time-sensitive markets.",            fields:["dataStreamId","priceThreshold","isAbove"] },
+  { type:2, label:"Functions API", color:"#e040fb", icon:"{ }",tag:"Programmable", desc:"Custom JavaScript on Chainlink Functions — calls any external API.",            fields:["functionsScript"] },
+  { type:3, label:"AI Grounded",   color:"#06d6f0", icon:"✦", tag:"AI-powered",    desc:"Gemini AI with live web search grounding for real-world event verification.",    fields:[] },
+  { type:4, label:"Composite",     color:"#00e5a0", icon:"⬡", tag:"Multi-source",  desc:"N-of-M consensus — multiple oracle sources must agree to resolve.",              fields:["requiredAgreement","priceFeedAddress"] },
 ];
-
-const CATEGORIES = ["Crypto", "Sports", "Politics", "Science", "Entertainment", "Custom"];
-
-const PRICE_FEEDS: Record<string, string> = {
-  "ETH/USD": "0x4aDC67d868764F27A76A1C73B3552fa4F21E470b",
-  "BTC/USD": "0x0FB99723Aee6f420beAD13e6bBB79024e1BA0013",
-  "LINK/USD": "0xb113F5A928BCfF189C998ab20d753a47F9dE5A61",
+const CATEGORIES = ["Crypto","Sports","Politics","Science","Entertainment","Custom"];
+const PRICE_FEEDS: Record<string,string> = {
+  "ETH/USD":"0x4aDC67d868764F27A76A1C73B3552fa4F21E470b",
+  "BTC/USD":"0x0FB99723Aee6f420beAD13e6bBB79024e1BA0013",
+  "LINK/USD":"0xb113F5A928BCfF189C998ab20d753a47F9dE5A61",
 };
 
 export default function CreateMarketPage() {
   const { isConnected } = useAccount();
   const { writeContract } = useWriteContract();
+  const [question,setQuestion] = useState("");
+  const [category,setCategory] = useState(0);
+  const [deadlineDays,setDeadlineDays] = useState("7");
+  const [seedAmount,setSeedAmount] = useState("0.01");
+  const [selectedPipeline,setSelectedPipeline] = useState(3);
+  const [priceFeed,setPriceFeed] = useState("ETH/USD");
+  const [priceThreshold,setPriceThreshold] = useState("");
+  const [isAbove,setIsAbove] = useState(true);
+  const [requiredAgreement,setRequiredAgreement] = useState("2");
 
-  const [question, setQuestion] = useState("");
-  const [category, setCategory] = useState(0);
-  const [deadlineDays, setDeadlineDays] = useState("7");
-  const [seedAmount, setSeedAmount] = useState("0.01");
-  const [selectedPipeline, setSelectedPipeline] = useState(3); // AI Grounded default
-  const [priceFeed, setPriceFeed] = useState("ETH/USD");
-  const [priceThreshold, setPriceThreshold] = useState("");
-  const [isAbove, setIsAbove] = useState(true);
-  const [requiredAgreement, setRequiredAgreement] = useState("2");
-
-  const selectedOption = PIPELINE_OPTIONS.find((p) => p.type === selectedPipeline)!;
+  const sel = PIPELINE_OPTIONS.find(p=>p.type===selectedPipeline)!;
 
   const handleCreate = () => {
-    if (!question) return;
-
-    const deadline = BigInt(Math.floor(Date.now() / 1000) + Number(deadlineDays) * 86400);
-    const priceFeedAddress = PRICE_FEEDS[priceFeed] || "0x0000000000000000000000000000000000000000";
-
-    const config = {
-      pipelineType: selectedPipeline,
-      priceFeedAddress: priceFeedAddress as `0x${string}`,
-      priceThreshold: BigInt(Math.round(Number(priceThreshold || "0") * 1e8)),
-      isAbove,
-      dataStreamId: "0x0000000000000000000000000000000000000000000000000000000000000000" as `0x${string}`,
-      functionsScript: "",
-      aiPromptHash: "0x0000000000000000000000000000000000000000000000000000000000000000" as `0x${string}`,
-      requiredAgreement: Number(requiredAgreement),
-    };
-
-    writeContract({
-      address: CONTRACTS.marketFactory,
-      abi: [
-        {
-          name: "createMarket",
-          type: "function",
-          stateMutability: "payable",
-          inputs: [
-            { name: "question", type: "string" },
-            { name: "category", type: "uint8" },
-            { name: "deadline", type: "uint256" },
-            { name: "pipelineType", type: "uint8" },
-            {
-              name: "pipelineConfig", type: "tuple",
-              components: [
-                { name: "pipelineType", type: "uint8" },
-                { name: "priceFeedAddress", type: "address" },
-                { name: "priceThreshold", type: "int256" },
-                { name: "isAbove", type: "bool" },
-                { name: "dataStreamId", type: "bytes32" },
-                { name: "functionsScript", type: "string" },
-                { name: "aiPromptHash", type: "bytes32" },
-                { name: "requiredAgreement", type: "uint8" },
-              ],
-            },
-          ],
-          outputs: [{ name: "", type: "uint256" }],
-        },
-      ] as const,
-      functionName: "createMarket",
-      args: [question, category, deadline, selectedPipeline, config],
-      value: parseEther(seedAmount),
-    });
+    if(!question) return;
+    const deadline = BigInt(Math.floor(Date.now()/1000)+Number(deadlineDays)*86400);
+    const pfa = PRICE_FEEDS[priceFeed]||"0x0000000000000000000000000000000000000000";
+    const config = { pipelineType:selectedPipeline, priceFeedAddress:pfa as `0x${string}`, priceThreshold:BigInt(Math.round(Number(priceThreshold||"0")*1e8)), isAbove, dataStreamId:"0x0000000000000000000000000000000000000000000000000000000000000000" as `0x${string}`, functionsScript:"", aiPromptHash:"0x0000000000000000000000000000000000000000000000000000000000000000" as `0x${string}`, requiredAgreement:Number(requiredAgreement) };
+    writeContract({ address:CONTRACTS.marketFactory, abi:[{name:"createMarket",type:"function",stateMutability:"payable",inputs:[{name:"question",type:"string"},{name:"category",type:"uint8"},{name:"deadline",type:"uint256"},{name:"pipelineType",type:"uint8"},{name:"pipelineConfig",type:"tuple",components:[{name:"pipelineType",type:"uint8"},{name:"priceFeedAddress",type:"address"},{name:"priceThreshold",type:"int256"},{name:"isAbove",type:"bool"},{name:"dataStreamId",type:"bytes32"},{name:"functionsScript",type:"string"},{name:"aiPromptHash",type:"bytes32"},{name:"requiredAgreement",type:"uint8"}]}],outputs:[{name:"",type:"uint256"}]}] as const, functionName:"createMarket", args:[question,category,deadline,selectedPipeline,config], value:parseEther(seedAmount) });
   };
 
-  if (!isConnected) {
-    return (
-      <div className="text-center py-20 text-gray-500">
-        <p className="text-lg mb-2">Connect Your Wallet</p>
-        <p className="text-sm">Connect your wallet to create a prediction market.</p>
+  const inp: React.CSSProperties = { width:"100%", background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:10, padding:"12px 14px", fontSize:14, color:"var(--text-primary)", outline:"none", transition:"all 0.2s ease", fontFamily:"'Inter', sans-serif", appearance:"none" };
+  const focus = (e: React.FocusEvent<HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement>) => { (e.target as HTMLElement).style.borderColor="rgba(77,163,255,0.4)"; (e.target as HTMLElement).style.background="rgba(77,163,255,0.04)"; };
+  const blur  = (e: React.FocusEvent<HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement>) => { (e.target as HTMLElement).style.borderColor="var(--border-default)"; (e.target as HTMLElement).style.background="rgba(255,255,255,0.03)"; };
+
+  if(!isConnected) return (
+    <div className="page-enter" style={{ display:"flex", alignItems:"center", justifyContent:"center", minHeight:500, paddingTop:48 }}>
+      <div style={{ background:"var(--bg-card)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:24, padding:"56px 48px", textAlign:"center", maxWidth:420, position:"relative", overflow:"hidden" }}>
+        <div style={{ position:"absolute", top:0, left:0, right:0, height:1, background:"linear-gradient(90deg,transparent,#4da3ff,transparent)" }} />
+        <p style={{ fontSize:40, marginBottom:20 }}>⊕</p>
+        <h2 style={{ fontFamily:"'Space Grotesk', sans-serif", fontWeight:800, fontSize:24, letterSpacing:"-0.03em", marginBottom:12 }}>Connect to Create</h2>
+        <p style={{ fontSize:14, color:"var(--text-secondary)", lineHeight:1.7 }}>Connect your wallet to create a prediction market with a custom oracle pipeline.</p>
       </div>
-    );
-  }
+    </div>
+  );
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold mb-2">Create Market</h1>
-      <p className="text-sm text-gray-400 mb-8">Choose your question and oracle pipeline. The pipeline determines how the market gets resolved.</p>
+    <div style={{ maxWidth:700, margin:"0 auto", paddingTop:48, paddingBottom:80 }} className="page-enter">
+      <p style={{ fontSize:11, color:"var(--text-muted)", fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", fontFamily:"'JetBrains Mono', monospace", marginBottom:12 }}>Create Market</p>
+      <h1 style={{ fontFamily:"'Space Grotesk', sans-serif", fontSize:"clamp(28px, 4vw, 40px)", fontWeight:800, letterSpacing:"-0.03em", marginBottom:10 }}>New Prediction Market</h1>
+      <p style={{ fontSize:14, color:"var(--text-secondary)", marginBottom:48, lineHeight:1.7 }}>Pick your question and oracle pipeline. The pipeline determines how the market resolves.</p>
 
-      {/* Question */}
-      <div className="mb-6">
-        <label className="text-sm font-medium block mb-2">Market Question</label>
-        <input
-          type="text"
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          placeholder="Will ETH exceed $5000 by March 2026?"
-          className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-sm focus:border-purple-500 focus:outline-none"
-        />
-      </div>
+      {/* QUESTION */}
+      <Section title="Market Question">
+        <textarea value={question} onChange={e=>setQuestion(e.target.value)} placeholder="Will ETH exceed $5000 by March 2026?" rows={3}
+          style={{...inp, resize:"none", lineHeight:1.7, fontSize:15}} onFocus={focus as any} onBlur={blur as any} />
+        <div style={{ display:"flex", justifyContent:"space-between", marginTop:8 }}>
+          <span style={{ fontSize:11, color:"var(--text-muted)" }}>Be specific and unambiguous</span>
+          <span style={{ fontSize:11, color: question.length>0?"var(--accent-blue)":"var(--text-muted)", fontFamily:"'JetBrains Mono', monospace" }}>{question.length}</span>
+        </div>
+      </Section>
 
-      {/* Category + Deadline + Seed */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        <div>
-          <label className="text-xs text-gray-500 block mb-1">Category</label>
-          <select
-            value={category}
-            onChange={(e) => setCategory(Number(e.target.value))}
-            className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:border-purple-500 focus:outline-none"
-          >
-            {CATEGORIES.map((c, i) => (
-              <option key={c} value={i}>{c}</option>
-            ))}
-          </select>
+      {/* SETTINGS */}
+      <Section title="Market Settings">
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12 }}>
+          {["Category","Deadline (days)","Seed Pool (ETH)"].map((label,i)=>(
+            <div key={label}>
+              <label style={{ fontSize:10, color:"var(--text-muted)", display:"block", marginBottom:8, fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", fontFamily:"'JetBrains Mono', monospace" }}>{label}</label>
+              {i===0 ? (
+                <select value={category} onChange={e=>setCategory(Number(e.target.value))} style={inp} onFocus={focus as any} onBlur={blur as any}>
+                  {CATEGORIES.map((c,ci)=><option key={c} value={ci} style={{background:"#101010"}}>{c}</option>)}
+                </select>
+              ) : (
+                <input type="text" value={i===1?deadlineDays:seedAmount} onChange={e=>i===1?setDeadlineDays(e.target.value):setSeedAmount(e.target.value)} style={inp} onFocus={focus} onBlur={blur} />
+              )}
+            </div>
+          ))}
         </div>
-        <div>
-          <label className="text-xs text-gray-500 block mb-1">Deadline (days)</label>
-          <input
-            type="text"
-            value={deadlineDays}
-            onChange={(e) => setDeadlineDays(e.target.value)}
-            className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:border-purple-500 focus:outline-none"
-          />
-        </div>
-        <div>
-          <label className="text-xs text-gray-500 block mb-1">Seed Pool (ETH)</label>
-          <input
-            type="text"
-            value={seedAmount}
-            onChange={(e) => setSeedAmount(e.target.value)}
-            className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:border-purple-500 focus:outline-none"
-          />
-        </div>
-      </div>
+      </Section>
 
-      {/* Pipeline selection */}
-      <div className="mb-6">
-        <label className="text-sm font-medium block mb-3">Oracle Pipeline</label>
-        <div className="grid grid-cols-1 gap-2">
-          {PIPELINE_OPTIONS.map((p) => (
-            <button
-              key={p.type}
-              onClick={() => setSelectedPipeline(p.type)}
-              className={`text-left border-2 rounded-xl p-4 transition-all ${
-                selectedPipeline === p.type
-                  ? `${p.color} bg-gray-900`
-                  : "border-gray-800 bg-gray-900/50 hover:border-gray-600"
-              }`}
-            >
-              <p className="font-bold text-sm">{p.label}</p>
-              <p className="text-xs text-gray-400 mt-1">{p.desc}</p>
+      {/* PIPELINE */}
+      <Section title="Oracle Pipeline">
+        <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+          {PIPELINE_OPTIONS.map(p=>(
+            <button key={p.type} onClick={()=>setSelectedPipeline(p.type)} style={{
+              textAlign:"left", padding:"18px 20px", borderRadius:14, cursor:"pointer",
+              transition:"all 0.2s cubic-bezier(0.16,1,0.3,1)",
+              background: selectedPipeline===p.type ? p.color+"08" : "transparent",
+              border: selectedPipeline===p.type ? `1px solid ${p.color}30` : "1px solid rgba(255,255,255,0.06)",
+              transform: selectedPipeline===p.type ? "translateX(6px)" : "translateX(0)",
+            }}>
+              <div style={{ display:"flex", alignItems:"center", gap:14 }}>
+                <div style={{ width:36, height:36, borderRadius:10, background:p.color+"12", border:`1px solid ${p.color}20`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:p.icon==="{ }"?10:18, color:p.color, fontWeight:800, fontFamily:"'JetBrains Mono', monospace", flexShrink:0 }}>{p.icon}</div>
+                <div style={{ flex:1 }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:3 }}>
+                    <span style={{ fontWeight:700, fontSize:14, color: selectedPipeline===p.type ? p.color : "var(--text-primary)" }}>{p.label}</span>
+                    <span style={{ fontSize:9, fontWeight:700, letterSpacing:"0.06em", textTransform:"uppercase", padding:"2px 6px", borderRadius:99, background:p.color+"12", color:p.color, border:`1px solid ${p.color}20`, fontFamily:"'JetBrains Mono', monospace" }}>{p.tag}</span>
+                  </div>
+                  <span style={{ fontSize:12, color:"var(--text-muted)" }}>{p.desc}</span>
+                </div>
+                {selectedPipeline===p.type && <div style={{ width:7, height:7, borderRadius:"50%", background:p.color, boxShadow:`0 0 10px ${p.color}`, flexShrink:0 }} />}
+              </div>
             </button>
           ))}
         </div>
-      </div>
+      </Section>
 
-      {/* Pipeline-specific params */}
-      {(selectedOption.fields.includes("priceFeedAddress") || selectedOption.fields.includes("priceThreshold")) && (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 mb-6">
-          <h3 className="text-sm font-bold mb-3">Pipeline Configuration</h3>
-          <div className="grid grid-cols-2 gap-4">
-            {selectedOption.fields.includes("priceFeedAddress") && (
+      {/* PIPELINE PARAMS */}
+      {(sel.fields.includes("priceFeedAddress")||sel.fields.includes("priceThreshold")) && (
+        <Section title="Pipeline Config">
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:12 }}>
+            {sel.fields.includes("priceFeedAddress") && (
               <div>
-                <label className="text-xs text-gray-500 block mb-1">Price Feed</label>
-                <select
-                  value={priceFeed}
-                  onChange={(e) => setPriceFeed(e.target.value)}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:border-purple-500 focus:outline-none"
-                >
-                  {Object.keys(PRICE_FEEDS).map((f) => (
-                    <option key={f} value={f}>{f}</option>
-                  ))}
+                <label style={{ fontSize:10, color:"var(--text-muted)", display:"block", marginBottom:8, fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", fontFamily:"'JetBrains Mono', monospace" }}>Price Feed</label>
+                <select value={priceFeed} onChange={e=>setPriceFeed(e.target.value)} style={inp} onFocus={focus as any} onBlur={blur as any}>
+                  {Object.keys(PRICE_FEEDS).map(f=><option key={f} value={f} style={{background:"#101010"}}>{f}</option>)}
                 </select>
               </div>
             )}
-            {selectedOption.fields.includes("priceThreshold") && (
+            {sel.fields.includes("priceThreshold") && (
               <div>
-                <label className="text-xs text-gray-500 block mb-1">Price Threshold ($)</label>
-                <input
-                  type="text"
-                  value={priceThreshold}
-                  onChange={(e) => setPriceThreshold(e.target.value)}
-                  placeholder="5000"
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:border-purple-500 focus:outline-none"
-                />
+                <label style={{ fontSize:10, color:"var(--text-muted)", display:"block", marginBottom:8, fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", fontFamily:"'JetBrains Mono', monospace" }}>Threshold ($)</label>
+                <input type="text" value={priceThreshold} onChange={e=>setPriceThreshold(e.target.value)} placeholder="5000" style={inp} onFocus={focus} onBlur={blur} />
               </div>
             )}
-            {selectedOption.fields.includes("isAbove") && (
-              <div className="col-span-2">
-                <label className="text-xs text-gray-500 block mb-1">Direction</label>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setIsAbove(true)}
-                    className={`px-4 py-2 rounded-lg text-xs font-medium ${isAbove ? "bg-green-600" : "bg-gray-800 text-gray-400"}`}
-                  >
-                    Price Above Threshold = YES
-                  </button>
-                  <button
-                    onClick={() => setIsAbove(false)}
-                    className={`px-4 py-2 rounded-lg text-xs font-medium ${!isAbove ? "bg-red-600" : "bg-gray-800 text-gray-400"}`}
-                  >
-                    Price Below Threshold = YES
-                  </button>
+            {sel.fields.includes("isAbove") && (
+              <div style={{ gridColumn:"span 2" }}>
+                <label style={{ fontSize:10, color:"var(--text-muted)", display:"block", marginBottom:8, fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", fontFamily:"'JetBrains Mono', monospace" }}>Direction</label>
+                <div style={{ display:"flex", gap:8 }}>
+                  {[{val:true,label:"↑ Above = YES",c:"#00e5a0"},{val:false,label:"↓ Below = YES",c:"#ff4560"}].map(opt=>(
+                    <button key={String(opt.val)} onClick={()=>setIsAbove(opt.val)} style={{ flex:1, padding:"11px", borderRadius:10, fontSize:13, fontWeight:700, cursor:"pointer", fontFamily:"'Inter', sans-serif", transition:"all 0.2s ease",
+                      color: isAbove===opt.val ? "white" : "var(--text-secondary)",
+                      background: isAbove===opt.val ? (opt.val?"linear-gradient(135deg,#00b87a,#00955e)":"linear-gradient(135deg,#cc1c38,#a31530)") : "rgba(255,255,255,0.03)",
+                      border: isAbove===opt.val ? `1px solid ${opt.c}30` : "1px solid rgba(255,255,255,0.07)",
+                    }}>{opt.label}</button>
+                  ))}
                 </div>
               </div>
             )}
-            {selectedOption.fields.includes("requiredAgreement") && (
+            {sel.fields.includes("requiredAgreement") && (
               <div>
-                <label className="text-xs text-gray-500 block mb-1">Required Agreement (N-of-M)</label>
-                <input
-                  type="text"
-                  value={requiredAgreement}
-                  onChange={(e) => setRequiredAgreement(e.target.value)}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:border-purple-500 focus:outline-none"
-                />
+                <label style={{ fontSize:10, color:"var(--text-muted)", display:"block", marginBottom:8, fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", fontFamily:"'JetBrains Mono', monospace" }}>Agreement (N-of-M)</label>
+                <input type="text" value={requiredAgreement} onChange={e=>setRequiredAgreement(e.target.value)} style={inp} onFocus={focus} onBlur={blur} />
               </div>
             )}
           </div>
+        </Section>
+      )}
+
+      {/* PREVIEW */}
+      {question && (
+        <div style={{ background:"rgba(77,163,255,0.04)", border:"1px solid rgba(77,163,255,0.15)", borderRadius:16, padding:"18px 22px", marginBottom:12 }}>
+          <p style={{ fontSize:10, color:"rgba(77,163,255,0.5)", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", fontFamily:"'JetBrains Mono', monospace", marginBottom:8 }}>Preview</p>
+          <p style={{ fontSize:14, fontWeight:600, marginBottom:5, lineHeight:1.5 }}>{question}</p>
+          <p style={{ fontSize:12, color:"var(--text-muted)", fontFamily:"'JetBrains Mono', monospace" }}>{sel.label} · {CATEGORIES[category]} · {deadlineDays}d · {seedAmount} ETH</p>
         </div>
       )}
 
-      <button
-        onClick={handleCreate}
-        disabled={!question}
-        className="w-full bg-orange-600 hover:bg-orange-500 disabled:bg-gray-700 disabled:text-gray-500 font-bold py-3 rounded-xl transition-colors"
+      {/* SUBMIT */}
+      <button onClick={handleCreate} disabled={!question} style={{
+        width:"100%", padding:"18px", borderRadius:14, fontSize:16, fontWeight:800,
+        cursor: question?"pointer":"not-allowed",
+        color: question?"#0a0a0a":"var(--text-muted)",
+        background: question?"var(--accent-blue)":"rgba(255,255,255,0.04)",
+        border: question?"none":"1px solid rgba(255,255,255,0.07)",
+        boxShadow: question?"0 0 40px rgba(77,163,255,0.25)":"none",
+        transition:"all 0.25s ease", fontFamily:"'Space Grotesk', sans-serif", letterSpacing:"-0.01em",
+      }}
+        onMouseEnter={e=>{ if(question){(e.currentTarget as HTMLElement).style.transform="translateY(-2px)";(e.currentTarget as HTMLElement).style.boxShadow="0 0 60px rgba(77,163,255,0.45)";} }}
+        onMouseLeave={e=>{ if(question){(e.currentTarget as HTMLElement).style.transform="translateY(0)";(e.currentTarget as HTMLElement).style.boxShadow="0 0 40px rgba(77,163,255,0.25)";} }}
       >
-        Create Market ({seedAmount} ETH)
+        {question ? `Create Market · ${seedAmount} ETH` : "Enter a question to continue"}
       </button>
+    </div>
+  );
+}
+
+function Section({ title, children }: { title:string; children:React.ReactNode }) {
+  return (
+    <div style={{ background:"var(--bg-card)", border:"1px solid rgba(255,255,255,0.06)", borderRadius:20, padding:"26px", marginBottom:10 }}>
+      <p style={{ fontSize:10, color:"var(--text-muted)", fontWeight:700, letterSpacing:"0.1em", textTransform:"uppercase", fontFamily:"'JetBrains Mono', monospace", marginBottom:18 }}>{title}</p>
+      {children}
     </div>
   );
 }
