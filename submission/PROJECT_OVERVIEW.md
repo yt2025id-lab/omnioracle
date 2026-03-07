@@ -103,7 +103,7 @@ Market resolved on-chain → Winners claim proportional payout (2% fee)
 | Smart Contracts | Solidity 0.8.24, Foundry, OpenZeppelin v5 |
 | CRE Workflows | TypeScript → WASM (@chainlink/cre-sdk) |
 | Backend API | Express.js + Bun, x402 micropayments |
-| Frontend | Next.js 16, React 19, wagmi 3, RainbowKit, Tailwind CSS 4 |
+| Frontend | Next.js 16, React 19, wagmi v3, viem v2, Tailwind CSS 4 (custom wallet connector) |
 | AI | Google Gemini 2.0 Flash (search grounding) |
 | Chain | Base Sepolia (84532) |
 
@@ -115,7 +115,7 @@ Market resolved on-chain → Winners claim proportional payout (2% fee)
 | Total Solidity LoC | ~567 |
 | CRE Workflows | 3 (4 triggers: HTTP, 2x Cron, EVM Log) |
 | CRE TypeScript LoC | ~734 |
-| Test Cases | 46 (all passing) |
+| Test Cases | 52 (all passing) |
 | API Endpoints | 8 (2 paid via x402, 6 free) |
 | Frontend Pages | 6 |
 | Frontend LoC | ~800+ |
@@ -140,7 +140,7 @@ Market resolved on-chain → Winners claim proportional payout (2% fee)
 - Receives CRE report with (marketId, outcome, confidence)
 - Calls MarketFactory to finalize resolution
 
-### CrossChainRegistry.sol (88 lines) — CCIP Market Mirroring
+### CrossChainRegistry.sol (~175 lines) — CCIP Market Mirroring
 - `mirrorMarket()` — sends market metadata via CCIP to destination chains
 - `receiveCrossChainMarket()` — accepts and stores mirrored markets
 
@@ -207,7 +207,7 @@ Each project stands alone but they can interoperate for a complete prediction ma
 omnioracle/
 ├── contracts/                 # Foundry project
 │   ├── src/                   # 5 Solidity contracts + 1 interface
-│   ├── test/                  # 46 test cases (all passing)
+│   ├── test/                  # 52 test cases (all passing)
 │   └── script/                # Deployment script
 ├── cre-workflows/             # 3 CRE workflows (TypeScript)
 │   ├── market-factory/        # HTTP + Cron triggers
@@ -248,7 +248,7 @@ cd cre-workflows && cre workflow deploy market-factory
 - **MarketFactory:** [`0xd3A85f742CFE6B802A45bCF17c9C07B5adeC02c2`](https://sepolia.basescan.org/address/0xd3A85f742CFE6B802A45bCF17c9C07B5adeC02c2)
 - **OraclePipeline:** [`0x98BB79754e0475046B25CdCfbBdfd863f0e1D2F8`](https://sepolia.basescan.org/address/0x98BB79754e0475046B25CdCfbBdfd863f0e1D2F8)
 - **OmniResolver:** [`0xc75168B64808d46Fa25f651E7c2026B49Ad0B555`](https://sepolia.basescan.org/address/0xc75168B64808d46Fa25f651E7c2026B49Ad0B555)
-- **CRE Workflow:** [to be deployed/simulated]
+- **CRE Workflow:** 3 workflows defined (market-factory, oracle-resolver, cross-chain-sync)
 
 ---
 

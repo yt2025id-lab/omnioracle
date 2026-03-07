@@ -311,15 +311,15 @@
 ║  ├─ onReport() — CRE callback (0x00=create, 0x01=resolve)   ║
 ║  ├─ claim() — proportional payout, 2% fee, ReentrancyGuard  ║
 ║  ├─ disputeResolution() — 0.05 ETH dispute bond             ║
-║  └─ setFeaturedMarket() — VRF callback                      ║
+║  └─ requestFeaturedMarket() → requestRandomWords() → fulfillRandomWords()                      ║
 ║                                                              ║
 ║  OraclePipeline.sol (55 lines) — immutable pipeline config   ║
 ║  OmniResolver.sol (59 lines) — CRE resolution executor      ║
-║  CrossChainRegistry.sol (88 lines) — CCIP market mirroring  ║
+║  CrossChainRegistry.sol (~175 lines) — CCIP market mirroring  ║
 ║  AutoResolver.sol (53 lines) — Chainlink Automation          ║
 ║                                                              ║
 ║  ┌──────────────────────────────────────────────────────┐    ║
-║  │  46 test cases — ALL PASSING                         │    ║
+║  │  52 test cases — ALL PASSING                         │    ║
 ║  │  OpenZeppelin v5 · Solidity 0.8.24 · Foundry        │    ║
 ║  └──────────────────────────────────────────────────────┘    ║
 ║                                                              ║
@@ -334,7 +334,7 @@
 
 **Talking Points:**
 - 5 contracts, 567 lines of production Solidity
-- 46 tests, all passing — comprehensive coverage
+- 52 tests, all passing — comprehensive coverage
 - Deployed and verified on Base Sepolia
 - Clean separation of concerns: factory, pipeline config, resolver, cross-chain, automation
 
@@ -402,7 +402,7 @@
 ║  │     Each service solves a real, distinct problem.    │    ║
 ║  │                                                      │    ║
 ║  │  4. PRODUCTION-GRADE                                 │    ║
-║  │     46 tests passing. 5 deployed contracts.          │    ║
+║  │     52 tests passing. 5 deployed contracts.          │    ║
 ║  │     Real x402 payments. Live frontend.               │    ║
 ║  │     Not a demo — a working system.                   │    ║
 ║  │                                                      │    ║
@@ -444,7 +444,7 @@
 ║  │ AutoResolver       0x35b872...eD412f09               │    ║
 ║  └──────────────────────────────────────────────────────┘    ║
 ║                                                              ║
-║  All verified on BaseScan · 46 tests passing                 ║
+║  All verified on BaseScan · 52 tests passing                 ║
 ║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
 ```

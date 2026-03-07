@@ -178,7 +178,7 @@
 - 2:57 → Highlight `resolveAIGrounded` function
 - 3:02 → Highlight `resolveComposite` function
 - 3:07 → Quick switch to `project.yaml` to show workflow definitions
-- 3:12 → Switch to terminal, show `forge test` output (46 tests passing)
+- 3:12 → Switch to terminal, show `forge test` output (52 tests passing)
 
 ---
 
@@ -217,7 +217,7 @@
 >
 > *(show BaseScan for MarketFactory)*
 >
-> 46 test cases, all passing. Solidity 0.8.24 with OpenZeppelin v5. ReentrancyGuard on all payout functions. Proper access control.
+> 52 test cases, all passing. Solidity 0.8.24 with OpenZeppelin v5. ReentrancyGuard on all payout functions. Proper access control.
 >
 > *(switch to GitHub)*
 >
@@ -226,7 +226,7 @@
 **Action:**
 - 3:40 → Open BaseScan: https://sepolia.basescan.org/address/0xd3A85f742CFE6B802A45bCF17c9C07B5adeC02c2
 - 3:45 → Show contract code tab
-- 3:50 → Switch to terminal: `forge test -vv` showing 46 passing
+- 3:50 → Switch to terminal: `forge test -vv` showing 52 passing
 - 3:55 → Open GitHub repo page
 - 4:00 → Scroll through repo structure
 
@@ -261,7 +261,7 @@ omnioracle.vercel.app
 github.com/yt2025id-lab/omnioracle
 
 5 Pipelines · 8 Chainlink Services · 3 CRE Workflows
-46 Tests · 5 Deployed Contracts · Full Stack
+52 Tests · 5 Deployed Contracts · Full Stack
 
 Built for Chainlink Convergence Hackathon 2026
 ```
@@ -292,7 +292,7 @@ Built for Chainlink Convergence Hackathon 2026
 8. VS Code with `x402-server/src/server.ts` open
 
 ### Video Editing:
-- [ ] Add text overlays for key stats (8 services, 46 tests, etc.)
+- [ ] Add text overlays for key stats (8 services, 52 tests, etc.)
 - [ ] Add subtle background music (lo-fi or tech ambient, low volume)
 - [ ] Add transition effects between sections (simple fade/slide)
 - [ ] Add "Chainlink Convergence Hackathon" watermark in corner
@@ -323,7 +323,7 @@ Built for Chainlink Convergence Hackathon 2026
 │            O M N I O R A C L E              │
 │                                             │
 │   5 Pipelines · 8 Services · 3 Workflows   │
-│   46 Tests · 5 Contracts · Full Stack       │
+│   52 Tests · 5 Contracts · Full Stack       │
 │                                             │
 │   omnioracle.vercel.app                     │
 │   github.com/yt2025id-lab/omnioracle        │
@@ -397,7 +397,7 @@ Built for Chainlink Convergence Hackathon 2026
 >
 > And markets don't live on one chain. Our cross-chain-sync CRE workflow mirrors markets via CCIP to Ethereum Sepolia, Arbitrum, and Optimism. One market, multiple chains, unified liquidity.
 >
-> Everything is deployed and live on Base Sepolia. Five smart contracts. 46 test cases, all passing. Solidity 0.8.24 with OpenZeppelin v5. Fully open source. Three thousand four hundred lines of code.
+> Everything is deployed and live on Base Sepolia. Five smart contracts. 52 test cases, all passing. Solidity 0.8.24 with OpenZeppelin v5. Fully open source. Three thousand four hundred lines of code.
 >
 > OmniOracle isn't another prediction market clone. It's new infrastructure for how prediction markets should resolve.
 >
