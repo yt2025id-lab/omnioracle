@@ -10,27 +10,118 @@
 ║                                                              ║
 ║                      O M N I O R A C L E                     ║
 ║                                                              ║
-║          "Zapier for Prediction Market Oracles"              ║
+║   Composable Oracle Pipelines for the Next Generation        ║
+║   of Prediction Markets                                      ║
 ║                                                              ║
-║   Permissionless Market Factory × Composable Oracle Pipes    ║
+║   Trustless data resolution for the next generation          ║
+║   of decentralized markets.                                  ║
 ║                                                              ║
 ║   ─────────────────────────────────────────────────────────  ║
 ║                                                              ║
 ║   8 Chainlink Services  ·  3 CRE Workflows  ·  5 Pipelines  ║
 ║                                                              ║
-║   Live: omnioracle.vercel.app                                ║
-║   Chain: Base Sepolia                                        ║
+║   Live: omnioracle.vercel.app  ·  Chain: Base Sepolia        ║
 ║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
 ```
 
 **Talking Points:**
-- One-liner: "OmniOracle lets anyone create a prediction market and compose the right oracle pipeline for resolution — all orchestrated by Chainlink CRE."
-- This is not another Polymarket clone. This is infrastructure for how prediction markets *should* resolve.
+- OmniOracle is composable oracle infrastructure for prediction markets — not another Polymarket clone.
+- Tagline: "Trustless data resolution for the next generation of decentralized markets."
 
 ---
 
-## SLIDE 2 — The Problem
+## SLIDE 2 — Every Financial Market Depends on External Data
+
+```
+╔══════════════════════════════════════════════════════════════╗
+║                                                              ║
+║         Every financial market                               ║
+║         Depends on External Data                             ║
+║                                                              ║
+║  ┌──────────────┬──────────────┬──────────────┬───────────┐  ║
+║  │   PRICES     │   EVENTS     │  OUTCOMES    │  SIGNALS  │  ║
+║  │              │              │              │           │  ║
+║  │  BTC/ETH     │  Elections   │  Sports      │  Weather  │  ║
+║  │  price feeds │  results     │  winners     │  APIs     │  ║
+║  └──────────────┴──────────────┴──────────────┴───────────┘  ║
+║                                                              ║
+║         All Depend on External Information                   ║
+║                                                              ║
+║   Blockchains cannot access real-world data.                 ║
+║   They require oracles.                                      ║
+║   But oracles introduce a new problem...                     ║
+║                                                              ║
+╚══════════════════════════════════════════════════════════════╝
+```
+
+**Talking Points:**
+- Every prediction market — crypto prices, elections, sports, weather — requires external data
+- Blockchains are deterministic but isolated — they cannot call the outside world
+- Oracles bridge this gap, but trust becomes the new bottleneck
+
+---
+
+## SLIDE 3 — The Trust Problem
+
+```
+╔══════════════════════════════════════════════════════════════╗
+║                                                              ║
+║                         T R U S T                            ║
+║                                                              ║
+║   Today's Oracle Infrastructure is Fragile.                  ║
+║                                                              ║
+║   ✗  Single source feeds                                     ║
+║   ✗  Centralized data providers                              ║
+║   ✗  Opaque resolution mechanisms                            ║
+║                                                              ║
+║   This Creates Systemic Risk.                                ║
+║                                                              ║
+║   Prediction markets depend on ACCURATE RESOLUTION.          ║
+║   If the data is wrong — the entire market collapses.        ║
+║   Billions in capital depend on CORRECT OUTCOMES.            ║
+║                                                              ║
+╚══════════════════════════════════════════════════════════════╝
+```
+
+**Talking Points:**
+- Trust is the oracle problem — if your data source fails, so does your market
+- Single-source oracles are a single point of failure
+- Opaque resolution (like UMA's dispute system) creates manipulation vectors
+
+---
+
+## SLIDE 4 — The Missing Layer
+
+```
+╔══════════════════════════════════════════════════════════════╗
+║                                                              ║
+║   Web3 has:                                                  ║
+║                                                              ║
+║   ✓  Layer 1 — settlement                                    ║
+║   ✓  Layer 2 — scaling                                       ║
+║   ✓  DEXs — trading                                          ║
+║   ✓  DeFi — lending, derivatives                             ║
+║   ✓  Prediction markets — event betting                      ║
+║                                                              ║
+║   But one critical layer is missing...                       ║
+║                                                              ║
+║   ┌──────────────────────────────────────────────────────┐   ║
+║   │        COMPOSABLE ORACLE PIPELINES                   │   ║
+║   │   Right data source for every type of question       │   ║
+║   └──────────────────────────────────────────────────────┘   ║
+║                                                              ║
+╚══════════════════════════════════════════════════════════════╝
+```
+
+**Talking Points:**
+- The entire DeFi stack is built out — except oracle composability
+- Every prediction market uses ONE oracle type for ALL questions
+- This is the infrastructure gap OmniOracle fills
+
+---
+
+## SLIDE 5 — The Problem (Specific)
 
 ```
 ╔══════════════════════════════════════════════════════════════╗
@@ -69,7 +160,7 @@
 
 ---
 
-## SLIDE 3 — The Solution
+## SLIDE 6 — The Solution
 
 ```
 ╔══════════════════════════════════════════════════════════════╗
@@ -108,7 +199,7 @@
 
 ---
 
-## SLIDE 4 — 5 Pipeline Types (The Core Innovation)
+## SLIDE 7 — 5 Pipeline Types (The Core Innovation)
 
 ```
 ╔══════════════════════════════════════════════════════════════╗
@@ -151,7 +242,7 @@
 
 ---
 
-## SLIDE 5 — Architecture
+## SLIDE 8 — Architecture & Live Frontend
 
 ```
 ╔══════════════════════════════════════════════════════════════╗
@@ -159,8 +250,10 @@
 ║                                                              ║
 ║  ┌────────────────────────────────────────────────────────┐  ║
 ║  │              FRONTEND (Next.js 16)                     │  ║
-║  │   Dashboard · Markets · Create · Explorer · Portfolio  │  ║
-║  │   Space Grotesk · dark/light theme · bento grid UI    │  ║
+║  │   "Predict. On-chain. Resolved."                       │  ║
+║  │   Markets · Create · Portfolio · Explorer              │  ║
+║  │   dark/light toggle · Connect Wallet dropdown          │  ║
+║  │   Space Grotesk · bento grid · BASE SEPOLIA badge      │  ║
 ║  │              omnioracle.vercel.app                     │  ║
 ║  └───────────────────────┬────────────────────────────────┘  ║
 ║                          │                                   ║
@@ -199,7 +292,7 @@
 
 ---
 
-## SLIDE 6 — 8 Chainlink Services
+## SLIDE 9 — 8 Chainlink Services
 
 ```
 ╔══════════════════════════════════════════════════════════════╗
@@ -247,7 +340,7 @@
 
 ---
 
-## SLIDE 7 — CRE Deep Dive (The "Wow")
+## SLIDE 10 — CRE Deep Dive (The "Wow")
 
 ```
 ╔══════════════════════════════════════════════════════════════╗
@@ -300,7 +393,7 @@
 
 ---
 
-## SLIDE 8 — Smart Contracts
+## SLIDE 11 — Smart Contracts
 
 ```
 ╔══════════════════════════════════════════════════════════════╗
@@ -341,7 +434,7 @@
 
 ---
 
-## SLIDE 9 — x402 Payment Model
+## SLIDE 12 — x402 Payment Model
 
 ```
 ╔══════════════════════════════════════════════════════════════╗
@@ -380,7 +473,7 @@
 
 ---
 
-## SLIDE 10 — What Makes Us Win
+## SLIDE 13 — What Makes Us Win
 
 ```
 ╔══════════════════════════════════════════════════════════════╗
@@ -428,7 +521,7 @@
 
 ---
 
-## SLIDE 11 — Live Demo Links
+## SLIDE 14 — Live Demo Links
 
 ```
 ╔══════════════════════════════════════════════════════════════╗
