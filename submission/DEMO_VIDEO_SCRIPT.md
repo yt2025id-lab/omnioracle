@@ -55,10 +55,11 @@
 > Let me show you how it works."
 
 **Action:**
-- 0:25 → Show homepage dashboard — scroll slowly to show pipeline types section
-- 0:35 → Highlight "5 Pipeline Types" cards on homepage
-- 0:42 → Highlight "8 Chainlink Services" section
-- 0:50 → Click "Create Market" button to transition
+- 0:25 → Show redesigned homepage — Space Grotesk branding, dark theme with blue accents
+- 0:28 → Let marquee ticker scroll (shows pipeline types / live market data)
+- 0:33 → Scroll to bento grid section — pipeline cards, stats, how-it-works
+- 0:42 → Highlight "8 Chainlink Services" / pipeline summary cards
+- 0:50 → Click "Create Market" button (top nav or hero CTA) to transition
 
 ---
 
@@ -251,8 +252,8 @@
 > **OmniOracle. Composable oracles. Powered by Chainlink.**"
 
 **Action:**
-- 4:05 → Show frontend homepage
-- 4:10 → Quick montage: cycle through key screens (markets, create, pipeline builder, explorer)
+- 4:05 → Show redesigned frontend homepage (bento grid, dark theme, logo)
+- 4:10 → Quick montage: cycle through key screens (markets list, create market, market detail, explorer, portfolio)
 - 4:20 → Show final card:
 
 ```

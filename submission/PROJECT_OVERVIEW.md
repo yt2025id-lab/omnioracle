@@ -103,7 +103,7 @@ Market resolved on-chain → Winners claim proportional payout (2% fee)
 | Smart Contracts | Solidity 0.8.24, Foundry, OpenZeppelin v5 |
 | CRE Workflows | TypeScript → WASM (@chainlink/cre-sdk) |
 | Backend API | Express.js + Bun, x402 micropayments |
-| Frontend | Next.js 16, React 19, wagmi v3, viem v2, Tailwind CSS 4 (custom wallet connector) |
+| Frontend | Next.js 16, React 19, wagmi v3, viem v2, Tailwind CSS 4, Space Grotesk (dark/light theme, custom wallet UI) |
 | AI | Google Gemini 2.0 Flash (search grounding) |
 | Chain | Base Sepolia (84532) |
 
@@ -117,8 +117,8 @@ Market resolved on-chain → Winners claim proportional payout (2% fee)
 | CRE TypeScript LoC | ~734 |
 | Test Cases | 52 (all passing) |
 | API Endpoints | 8 (2 paid via x402, 6 free) |
-| Frontend Pages | 6 |
-| Frontend LoC | ~800+ |
+| Frontend Pages | 6 (+ ThemeToggle, redesigned ConnectWallet, Navbar) |
+| Frontend LoC | ~2,500+ |
 | Pipeline Types | 5 composable oracle pipelines |
 
 ## 7. Smart Contract Overview
@@ -214,7 +214,7 @@ omnioracle/
 │   ├── oracle-resolver/       # EVM Log trigger
 │   └── cross-chain-sync/      # Cron → CCIP trigger
 ├── x402-server/               # Payment-gated API (Bun + Express)
-├── frontend/                  # Next.js 16 + React 19 dashboard
+├── frontend/                  # Next.js 16 + React 19 dashboard (dark/light, logo, full redesign)
 ├── README.md                  # Full documentation
 └── PROJECT_OVERVIEW.md        # This file
 ```

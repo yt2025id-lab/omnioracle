@@ -159,7 +159,8 @@
 ║                                                              ║
 ║  ┌────────────────────────────────────────────────────────┐  ║
 ║  │              FRONTEND (Next.js 16)                     │  ║
-║  │   Dashboard · Markets · Pipeline Builder · Explorer    │  ║
+║  │   Dashboard · Markets · Create · Explorer · Portfolio  │  ║
+║  │   Space Grotesk · dark/light theme · bento grid UI    │  ║
 ║  │              omnioracle.vercel.app                     │  ║
 ║  └───────────────────────┬────────────────────────────────┘  ║
 ║                          │                                   ║
@@ -403,8 +404,9 @@
 ║  │                                                      │    ║
 ║  │  4. PRODUCTION-GRADE                                 │    ║
 ║  │     52 tests passing. 5 deployed contracts.          │    ║
-║  │     Real x402 payments. Live frontend.               │    ║
-║  │     Not a demo — a working system.                   │    ║
+║  │     Real x402 payments. Full-stack live frontend.    │    ║
+║  │     Redesigned UI: bento grid, dark/light theme,     │    ║
+║  │     Space Grotesk, custom wallet connector.          │    ║
 ║  │                                                      │    ║
 ║  │  5. ADDRESSES REAL PROBLEM                           │    ║
 ║  │     UMA's $7M hack proves one-size-fits-all          │    ║

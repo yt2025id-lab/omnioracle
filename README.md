@@ -12,7 +12,7 @@
 
 **"Zapier for prediction market oracles"** — any user creates a market and selects the right Chainlink oracle pipeline for resolution. Powered by **8 Chainlink services** working in concert.
 
-[Live Demo](https://omnioracle.vercel.app) · [Demo Video](DEMO_VIDEO_SCRIPT.md) · [Pitch Deck](PITCHDECK.md) · [Project Overview](PROJECT_OVERVIEW.md)
+[Live Demo](https://omnioracle.vercel.app) · [Demo Video](submission/DEMO_VIDEO_SCRIPT.md) · [Pitch Deck](submission/PITCHDECK.md) · [Project Overview](submission/PROJECT_OVERVIEW.md) · [Submission](submission/SUBMISSION.md)
 
 </div>
 
@@ -268,23 +268,33 @@ omnioracle/
 │       └── x402Client.ts
 │
 ├── frontend/                       # Next.js 16 app
+│   ├── public/
+│   │   └── logo_omnioracle.png     # Brand logo
 │   └── src/
 │       ├── app/
-│       │   ├── page.tsx            # Dashboard
+│       │   ├── globals.css         # Design system: Space Grotesk, CSS vars, dark/light
+│       │   ├── layout.tsx          # Root layout with Providers + ThemeToggle
+│       │   ├── page.tsx            # Dashboard: marquee, bento grid, how-it-works
 │       │   ├── markets/            # Market list + pipeline filters
-│       │   ├── create/             # Pipeline builder UI
-│       │   ├── portfolio/          # User positions
-│       │   └── explorer/           # Cross-chain explorer
+│       │   ├── markets/[id]/       # Market detail + betting UI
+│       │   ├── create/             # Pipeline builder: 5 types, full config
+│       │   ├── portfolio/          # User positions + claim
+│       │   └── explorer/           # Cross-chain explorer (CCIP)
 │       ├── components/
-│       │   ├── ConnectWallet.tsx   # wagmi native wallet connector
-│       │   └── PipelineVisualizer.tsx
+│       │   ├── ConnectWallet.tsx   # Dropdown wallet connector (wagmi native)
+│       │   ├── Navbar.tsx          # Navigation + theme toggle
+│       │   └── ThemeToggle.tsx     # Dark / light mode switcher
 │       └── lib/
-│           ├── wagmi.ts            # wagmi v3 + viem v2 config
-│           └── contracts.ts        # Contract ABIs and addresses
+│           ├── wagmi.ts            # wagmi v3 + viem v2 config (Base Sepolia)
+│           └── contracts.ts        # ABIs: MarketFactory, CrossChainRegistry,
+│                                   # AutoResolver + CCIP_CHAIN_SELECTORS
 │
-├── DEMO_LIVE.html                  # Standalone animated demo (no server needed)
-├── PITCHDECK.md                    # 11-slide pitch deck
-├── DEMO_VIDEO_SCRIPT.md            # 4:30 voiceover script
+├── submission/                     # Hackathon deliverables
+│   ├── SUBMISSION.md               # Judge-facing index
+│   ├── DEMO_LIVE.html              # Standalone animated demo (no server needed)
+│   ├── DEMO_VIDEO_SCRIPT.md        # 4:30 voiceover script
+│   ├── PITCHDECK.md                # 11-slide pitch deck
+│   └── PROJECT_OVERVIEW.md         # 1-page partner overview
 └── deploy.sh                       # One-click deployment script
 ```
 
@@ -414,7 +424,7 @@ Open [http://localhost:3000](http://localhost:3000)
 | Oracle Orchestration | Chainlink CRE (`@chainlink/cre-sdk`) |
 | Micropayments | Chainlink x402 (`@x402/express` v2.3) |
 | AI Resolution | Google Gemini (search-grounded) |
-| Frontend | Next.js 16, Tailwind CSS 4, wagmi v3, viem v2 |
+| Frontend | Next.js 16, Tailwind CSS 4, Space Grotesk, wagmi v3, viem v2, dark/light theme |
 | Runtime | Bun 1.2.21+ |
 
 ---
