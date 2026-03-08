@@ -1,8 +1,9 @@
 "use client";
 import { useState } from "react";
-import { useWriteContract, useAccount } from "wagmi";
+import { useWriteContract, useAccount, useWaitForTransactionReceipt } from "wagmi";
 import { parseEther } from "viem";
-import { CONTRACTS, FACTORY_ABI } from "@/lib/contracts";
+import { useRouter } from "next/navigation";
+import { CONTRACTS } from "@/lib/contracts";
 
 const PIPELINE_OPTIONS = [
   { type:0, label:"Price Feed",    color:"var(--accent-blue)", icon:"◐", tag:"Deterministic", desc:"Resolve using Chainlink Data Feeds. Best for crypto price threshold markets.", fields:["priceFeedAddress","priceThreshold","isAbove"] },
@@ -19,8 +20,14 @@ const PRICE_FEEDS: Record<string,string> = {
 };
 
 export default function CreateMarketPage() {
+  const router = useRouter();
   const { isConnected } = useAccount();
-  const { writeContract } = useWriteContract();
+  const { writeContract, data: txHash, isPending, isError, error } = useWriteContract();
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash: txHash });
+
+  if (isConfirmed && txHash) {
+    router.push("/markets");
+  }
   const [question,setQuestion] = useState("");
   const [category,setCategory] = useState(0);
   const [deadlineDays,setDeadlineDays] = useState("7");
@@ -168,21 +175,35 @@ export default function CreateMarketPage() {
         </div>
       )}
 
+      {/* ERROR */}
+      {isError && (
+        <div style={{ background:"rgba(255,69,96,0.08)", border:"1px solid rgba(255,69,96,0.25)", borderRadius:12, padding:"12px 16px", marginBottom:12, fontSize:13, color:"#ff4560" }}>
+          {(error as any)?.shortMessage || error?.message || "Transaction failed. Check your wallet."}
+        </div>
+      )}
+
       {/* SUBMIT */}
-      <button onClick={handleCreate} disabled={!question} style={{
-        width:"100%", padding:"18px", borderRadius:14, fontSize:16, fontWeight:800,
-        cursor: question?"pointer":"not-allowed",
-        color: question?"#0a0a0a":"var(--text-muted)",
-        background: question?"var(--accent-blue)":"rgba(255,255,255,0.04)",
-        border: question?"none":"1px solid rgba(255,255,255,0.07)",
-        boxShadow: question?"0 0 40px rgba(77,163,255,0.25)":"none",
-        transition:"all 0.25s ease", fontFamily:"'Space Grotesk', sans-serif", letterSpacing:"-0.01em",
-      }}
-        onMouseEnter={e=>{ if(question){(e.currentTarget as HTMLElement).style.transform="translateY(-2px)";(e.currentTarget as HTMLElement).style.boxShadow="0 0 60px rgba(77,163,255,0.45)";} }}
-        onMouseLeave={e=>{ if(question){(e.currentTarget as HTMLElement).style.transform="translateY(0)";(e.currentTarget as HTMLElement).style.boxShadow="0 0 40px rgba(77,163,255,0.25)";} }}
-      >
-        {question ? `Create Market · ${seedAmount} ETH` : "Enter a question to continue"}
-      </button>
+      {(() => {
+        const busy = isPending || isConfirming;
+        const active = !!question && !busy;
+        const label = isPending ? "Confirm in wallet…" : isConfirming ? "Confirming…" : question ? `Create Market · ${seedAmount} ETH` : "Enter a question to continue";
+        return (
+          <button onClick={handleCreate} disabled={!active} style={{
+            width:"100%", padding:"18px", borderRadius:14, fontSize:16, fontWeight:800,
+            cursor: active?"pointer":"not-allowed",
+            color: active?"#0a0a0a":"var(--text-muted)",
+            background: active?"var(--accent-blue)": busy?"rgba(77,163,255,0.15)":"rgba(255,255,255,0.04)",
+            border: active?"none": busy?"1px solid rgba(77,163,255,0.25)":"1px solid rgba(255,255,255,0.07)",
+            boxShadow: active?"0 0 40px rgba(77,163,255,0.25)":"none",
+            transition:"all 0.25s ease", fontFamily:"'Space Grotesk', sans-serif", letterSpacing:"-0.01em",
+          }}
+            onMouseEnter={e=>{ if(active){(e.currentTarget as HTMLElement).style.transform="translateY(-2px)";(e.currentTarget as HTMLElement).style.boxShadow="0 0 60px rgba(77,163,255,0.45)";} }}
+            onMouseLeave={e=>{ if(active){(e.currentTarget as HTMLElement).style.transform="translateY(0)";(e.currentTarget as HTMLElement).style.boxShadow="0 0 40px rgba(77,163,255,0.25)";} }}
+          >
+            {label}
+          </button>
+        );
+      })()}
     </div>
   );
 }
