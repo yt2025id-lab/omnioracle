@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useWriteContract, useAccount, useWaitForTransactionReceipt } from "wagmi";
-import { parseEther } from "viem";
+import { parseEther, getAddress } from "viem";
 import { useRouter } from "next/navigation";
 import { CONTRACTS } from "@/lib/contracts";
 
@@ -43,7 +43,8 @@ export default function CreateMarketPage() {
   const handleCreate = () => {
     if(!question) return;
     const deadline = BigInt(Math.floor(Date.now()/1000)+Number(deadlineDays)*86400);
-    const pfa = PRICE_FEEDS[priceFeed]||"0x0000000000000000000000000000000000000000";
+    const zero = "0x0000000000000000000000000000000000000000" as `0x${string}`;
+    const pfa = sel.fields.includes("priceFeedAddress") ? getAddress(PRICE_FEEDS[priceFeed]) : zero;
     const config = { pipelineType:selectedPipeline, priceFeedAddress:pfa as `0x${string}`, priceThreshold:BigInt(Math.round(Number(priceThreshold||"0")*1e8)), isAbove, dataStreamId:"0x0000000000000000000000000000000000000000000000000000000000000000" as `0x${string}`, functionsScript:"", aiPromptHash:"0x0000000000000000000000000000000000000000000000000000000000000000" as `0x${string}`, requiredAgreement:Number(requiredAgreement) };
     writeContract({ address:CONTRACTS.marketFactory, abi:[{name:"createMarket",type:"function",stateMutability:"payable",inputs:[{name:"question",type:"string"},{name:"category",type:"uint8"},{name:"deadline",type:"uint256"},{name:"pipelineType",type:"uint8"},{name:"pipelineConfig",type:"tuple",components:[{name:"pipelineType",type:"uint8"},{name:"priceFeedAddress",type:"address"},{name:"priceThreshold",type:"int256"},{name:"isAbove",type:"bool"},{name:"dataStreamId",type:"bytes32"},{name:"functionsScript",type:"string"},{name:"aiPromptHash",type:"bytes32"},{name:"requiredAgreement",type:"uint8"}]}],outputs:[{name:"",type:"uint256"}]}] as const, functionName:"createMarket", args:[question,category,deadline,selectedPipeline,config], value:parseEther(seedAmount) });
   };
