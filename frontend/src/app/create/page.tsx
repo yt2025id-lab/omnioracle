@@ -65,7 +65,7 @@ export default function CreateMarketPage() {
 
   return (
     <div style={{ maxWidth:700, margin:"0 auto", paddingTop:48, paddingBottom:80 }} className="page-enter">
-      <p style={{ fontSize:11, color:"var(--text-muted)", fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", fontFamily:"'JetBrains Mono', monospace", marginBottom:12 }}>Create Market</p>
+      <p style={{ fontSize:11, color:"var(--text-muted)", fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", fontFamily:"'JetBrains Mono', monospace", marginBottom:12 }}>Create New Market</p>
       <h1 style={{ fontFamily:"'Space Grotesk', sans-serif", fontSize:"clamp(28px, 4vw, 40px)", fontWeight:800, letterSpacing:"-0.03em", marginBottom:10 }}>Make New Prediction Market</h1>
       <p style={{ fontSize:14, color:"var(--text-secondary)", marginBottom:48, lineHeight:1.7 }}>Pick your question and oracle pipeline. The pipeline determines how the market resolves.</p>
 
