@@ -4,6 +4,7 @@
 
 ### Permissionless Prediction Markets with Composable Oracle Pipelines
 
+[![Presentation](https://img.shields.io/badge/Presentation-Watch%20Now-FF0000?style=for-the-badge&logo=googledrive)](https://drive.google.com/file/d/1JsKHLS0hFp5cujgwy0rb2Vbkv-o_leAz/view?usp=sharing)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-omnioracle.vercel.app-6366f1?style=for-the-badge&logo=vercel)](https://omnioracle.vercel.app)
 [![Built for Chainlink](https://img.shields.io/badge/Built%20for-Chainlink%20Convergence%20Hackathon-375BD2?style=for-the-badge&logo=chainlink)](https://chain.link/hackathon)
 [![Network](https://img.shields.io/badge/Network-Base%20Sepolia-0052FF?style=for-the-badge&logo=coinbase)](https://sepolia.basescan.org)
